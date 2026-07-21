@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Contact</title>
+		<link rel="stylesheet" href="../styles/contact.css"/>
+		<link rel="icon" type="image/x-icon" href="../images/favicon.ico">
+	</head> 
+	<body>
+		<header class="site-header">
+      <div class="container nav-container">
+        <div class="logo"><a class="home-button" href="../index.html">IRIS</a></div>
+        <nav class="main-nav">
+          <ul>
+            <li><a href="Features.html">Features</a></li>
+            <li><a href="Pricing.html">Pricing</a></li>
+            <li><a href="About.html">About</a></li>
+            <li><a href="Contact.html">contact</a></li> 
+          </ul>
+        </nav>
+        <div class="actions">
+          <a href="https://docs.google.com/forms/d/e/1FAIpQLSeLOEqtjiaY5nZIv6wPE6rEl34T9l4YHGsAicAakZv-iF4W0w/viewform" class="btn-primary">Get a free scan</a>
+        </div>
+      </div>
+    </header> 
+		<!-- ═══════════════════════════════════════════════════════════
+		IRIS – Contact page  |  <main> content
+			Koppel: styles/contact.css + scripts/main.js
+			═══════════════════════════════════════════════════════════ -->
+			<main id="contact" class="contact-page">
+				<!-- ══ 1. HERO ════════════════════════════════════════════════ -->
+				<section class="ct-hero">
+				  <video class="ct-hero__video" autoplay muted loop playsinline preload="metadata">
+					<source src="../images/Hero.mp4" type="video/mp4" />
+				  </video>
+				
+				  <div class="ct-hero__overlay" aria-hidden="true"></div>
+				  <div class="ct-hero__glow" aria-hidden="true"></div>
+				
+				  <div class="ct-container">
+					<p class="ct-eyebrow hidden">Contact</p>
+				
+					<h1 class="ct-hero__title hidden">
+					  Let's get acquainted.<br />
+					  <span class="ct-hero__title-dim">We enjoy listening.</span>
+					</h1>
+				
+					<p class="ct-hero__sub hidden">
+					  Do you have a question about IRIS, would you like to schedule a demo, or are you simply curious?
+					  Get in touch, we respond within one business day.
+					</p>
+				  </div>
+				</section>
+				<!-- ══ 2. MAIN CONTENT ═══════════════════════════════════════ -->
+				<section class="ct-main">
+					<div class="ct-container ct-main__grid">
+						<!-- ── Linker kolom: contactinfo ── -->
+						<div class="ct-info" data-reveal="left">
+							<!-- Demo CTA -->
+							<div class="ct-demo-card">
+								<div class="ct-demo-card__icon">🚀</div>
+								<h3>Plan een gratis demo</h3>
+								<p>
+									Discover in 30 minutes what IRIS can do for your team. 
+									Our experts will show you how the platform works based on your sector.
+								</p>
+								<a href="#" class="ct-btn ct-btn--primary">
+									Demo inplannen
+									<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+										fill="none" stroke="currentColor" stroke-width="2.5"
+										stroke-linecap="round" stroke-linejoin="round">
+										<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
+									</svg>
+								</a>
+							</div>
+							<!-- Directe contactinfo -->
+							<div class="ct-contact-items">
+								<div class="ct-contact-item">
+									<div class="ct-contact-item__icon">📬</div>
+									<div>
+										<p class="ct-contact-item__label">E-mail</p>
+										<a href="mailto:hello@iris-platform.be" class="ct-contact-item__value">
+											hello@iris-platform.be
+										</a>
+									</div>
+								</div>
+								<div class="ct-contact-item">
+									<div class="ct-contact-item__icon">📍</div>
+									<div>
+										<p class="ct-contact-item__label">Office</p>
+										<span class="ct-contact-item__value">
+											TomorrowLab, Antwerpen, België
+										</span>
+									</div>
+								</div>
+								<div class="ct-contact-item">
+									<div class="ct-contact-item__icon">💼</div>
+									<div>
+										<p class="ct-contact-item__label">LinkedIn</p>
+										<a href="#" class="ct-contact-item__value">IRIS by TomorrowLab</a>
+									</div>
+								</div>
+							</div>
+							<!-- Reactietijd badge -->
+							<div class="ct-response-badge">
+								<span class="ct-response-dot"></span>
+								Gemiddelde reactietijd: <strong>onder 24u</strong>
+							</div>
+						</div>
+						<!-- ── Rechter kolom: formulier ── -->
+						<div class="ct-form-wrap" data-reveal="right">
+							<form class="ct-form" id="ct-form" novalidate>
+								<div class="ct-form__row">
+									<div class="ct-field">
+										<label for="ct-name">Naam</label>
+										<input type="text" id="ct-name" name="name" placeholder="Jan Janssen" required />
+									</div>
+									<div class="ct-field">
+										<label for="ct-company">Bedrijf</label>
+										<input type="text" id="ct-company" name="company" placeholder="Jouw organisatie" />
+									</div>
+								</div>
+								<div class="ct-field">
+									<label for="ct-email">E-mailadres <span class="ct-required">*</span></label>
+									<input type="email" id="ct-email" name="email" placeholder="jij@bedrijf.be" required />
+								</div>
+								<div class="ct-field">
+									<label for="ct-subject">Subject</label>
+									<div class="ct-select-wrap">
+										<select id="ct-subject" name="subject">
+											<option value="">Choose a topic…</option>
+											<option value="demo">Demo request</option>
+											<option value="pricing">Question abouot the pricing</option>
+											<option value="partnership">Partnership / collaboration</option>
+											<option value="press">Press & media</option>
+											<option value="other">Something else</option>
+										</select>
+										<svg class="ct-select-arrow" xmlns="http://www.w3.org/2000/svg" width="14" height="14"
+											viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+											stroke-linecap="round" stroke-linejoin="round">
+											<path d="m6 9 6 6 6-6"/>
+										</svg>
+									</div>
+								</div>
+								<div class="ct-field">
+									<label for="ct-message">Bericht <span class="ct-required">*</span></label>
+									<textarea id="ct-message" name="message" rows="5"
+									placeholder="Tell us more about your question or situation…" required></textarea>
+								</div>
+								<div class="ct-field ct-field--checkbox">
+									<label class="ct-checkbox-label">
+										<input type="checkbox" name="privacy" required />
+										<span class="ct-checkbox-custom"></span>
+										I agree with the
+										<a href="#privacy" class="ct-link">privacy policy</a>
+										van IRIS.
+									</label>
+								</div>
+								<button type="submit" class="ct-btn ct-btn--primary ct-btn--full" id="ct-submit">
+								<span class="ct-submit-text">sent message</span>
+								<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
+									fill="none" stroke="currentColor" stroke-width="2.5"
+									stroke-linecap="round" stroke-linejoin="round">
+									<path d="M5 12h14"/><path d="m12 5 7 7-7 7"/>
+								</svg>
+								</button>
+								<!-- Success state -->
+								<div class="ct-form__success" id="ct-success" aria-live="polite">
+									<div class="ct-success-icon">✓</div>
+									<h3>Message sended</h3>
+									<p>Thank you for your message. We will contact you as soon as possible.</p>
+								</div>
+							</form>
+						</div>
+					</div>
+				</section>
+				<!-- ══ 3. TRUST BALK ═════════════════════════════════════════ -->
+				<section class="ct-trust">
+					<div class="ct-container ct-trust__grid hidden">
+						<div class="ct-trust-item hidden">
+							<div class="ct-trust-item__icon">🔒</div>
+							<h4>GDPR-conform</h4>
+							<p>Your data is never shared or sold. Always securely stored in Europe.</p>
+						</div>
+						<div class="ct-trust-item hidden">
+							<div class="ct-trust-item__icon">⚡</div>
+							<h4>Quick follow-up</h4>
+							<p>Our team responds within one business day, usually sooner..</p>
+						</div>
+						<div class="ct-trust-item hidden">
+							<div class="ct-trust-item__icon">🎯</div>
+							<h4>Custom-made</h4>
+							<p>No standard sales pitch. We listen to your specific situation first.</p>
+						</div>
+					</div>
+				</section>
+				<!-- ══ 4. FAQ ═════════════════════════════════════════════════ -->
+				<section class="ct-faq">
+					<div class="ct-container">
+						<p class="ct-eyebrow ct-eyebrow--center hidden">Veelgestelde vragen</p>
+						<h2 class="ct-faq__title hidden">Need a quick answer?</h2>
+						<div class="ct-faq__list hidden">
+							<details class="ct-faq__item">
+							<summary class="ct-faq__q">
+							For which type of organizations is IRIS intended?
+							<svg class="ct-faq__arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+								viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+								stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+								</summary>
+								<p class="ct-faq__a">
+									IRIS is built for strategic companies, innovation teams, and policymakers
+									at medium to large organizations. Both private sector and government.
+									From a team of 2 to a multi-business unit with dozens of users.
+								</p>
+								</details>
+								<details class="ct-faq__item">
+								<summary class="ct-faq__q">
+									How long does the onboarding take?								
+									<svg class="ct-faq__arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+									viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+									stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+									</summary>
+									<p class="ct-faq__a">
+										Most teams are operational within one day. 
+										We personally guide every customer in setting up the scan profiles, PESTEL domains, and reporting templates.
+									</p>
+									</details>
+									<details class="ct-faq__item">
+									<summary class="ct-faq__q">
+										Can I try IRIS before I decide?
+									<svg class="ct-faq__arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+										viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+										stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+										</summary>
+										<p class="ct-faq__a">
+											Yes. You can start with a free sector scan that we perform for you.
+											This way, you immediately see which signals IRIS picks up for your domain, without any obligation.
+										</p>
+										</details>
+										<details class="ct-faq__item">
+										<summary class="ct-faq__q">
+										Is er een minimale contractduur?
+										<svg class="ct-faq__arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+											viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+											stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+											</summary>
+											<p class="ct-faq__a">
+												Licenses run on an annual basis. For Enterprise customers, 
+												we will review the most suitable agreement together. Contact us for a personalized quote.
+											</p>
+											</details>
+											<details class="ct-faq__item">
+											<summary class="ct-faq__q">
+											What about data privacy and security?
+											<svg class="ct-faq__arrow" xmlns="http://www.w3.org/2000/svg" width="18" height="18"
+												viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+												stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+												</summary>
+												<p class="ct-faq__a">
+													IRIS is fully GDPR compliant. Data is stored on European servers.
+													Internal documents that you upload are never used for training 
+													AI models and are strictly separated by client.
+												</p>
+												</details>
+											</div>
+										</div>
+									</section>
+									<!-- ══ 5. CTA ═════════════════════════════════════════════════ -->
+									<section class="cta">
+										<div class="container cta-wrapper hidden">
+											<div class="cta-text">
+												<h2>Ready to see the future clearly?</h2>
+												<p>Receive a free scan and discover new signals immediately.</p>
+											</div>
+											<div class="cta-buttons">
+												<a href="https://docs.google.com/forms/d/e/1FAIpQLSeLOEqtjiaY5nZIv6wPE6rEl34T9l4YHGsAicAakZv-iF4W0w/viewform" class="btn-primary">Get a scan</a>
+												<a href="Features.html" class="btn-secondary">See all features</a>
+											</div>
+										</div>
+									</section>
+								</main>
+								<!-- EmailJS SDK -->
+								<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+								<script>
+								/* ════════════════════════════════════════════════════════════
+								IRIS – Contact form  ×  EmailJS
+								────────────────────────────────────────────────────────────
+								Stap 1 › Maak een gratis account op https://www.emailjs.com
+								Stap 2 › Maak een Email Service (bv. Gmail of Outlook)
+								→ kopieer je Service ID  →  vul in bij SERVICE_ID
+								Stap 3 › Maak een Email Template (zie onderstaande velden)
+								→ kopieer je Template ID →  vul in bij TEMPLATE_ID
+								Stap 4 › Ga naar Account → API Keys
+								→ kopieer je Public Key  →  vul in bij PUBLIC_KEY
+								════════════════════════════════════════════════════════════ */
+								const EMAILJS_SERVICE_ID  = 'JOUW_SERVICE_ID';   // ← vervang
+								const EMAILJS_TEMPLATE_ID = 'JOUW_TEMPLATE_ID';  // ← vervang
+								const EMAILJS_PUBLIC_KEY  = 'JOUW_PUBLIC_KEY';   // ← vervang
+								/* ── Template variabelen (gebruik exact deze namen in EmailJS) ──
+								{{from_name}}    → naam van de afzender
+								{{from_email}}   → e-mailadres van de afzender
+								{{company}}      → bedrijfsnaam
+								{{subject}}      → gekozen onderwerp
+								{{message}}      → bericht
+								{{reply_to}}     → zet dit als Reply-To in je template
+								────────────────────────────────────────────────────────── */
+								(function () {
+								// Initialiseer EmailJS met je Public Key
+								emailjs.init({ publicKey: EMAILJS_PUBLIC_KEY });
+								const form    = document.getElementById('ct-form');
+								const success = document.getElementById('ct-success');
+								const submit  = document.getElementById('ct-submit');
+								const btnText = submit?.querySelector('.ct-submit-text');
+								if (!form) return;
+								/* ── Validatie ── */
+								function validate() {
+								let valid = true;
+								form.querySelectorAll('[required]').forEach(field => {
+								field.closest('.ct-field')?.classList.remove('ct-field--error');
+								const empty = field.type === 'checkbox' ? !field.checked : !field.value.trim();
+								if (empty) {
+								field.closest('.ct-field')?.classList.add('ct-field--error');
+								valid = false;
+								}
+								});
+								return valid;
+								}
+								/* ── Clear errors on input ── */
+								form.querySelectorAll('input, textarea, select').forEach(el => {
+								el.addEventListener('input', () => {
+								el.closest('.ct-field')?.classList.remove('ct-field--error');
+								});
+								});
+								/* ── Submit ── */
+								form.addEventListener('submit', async function (e) {
+								e.preventDefault();
+								if (!validate()) return;
+								// Loading state
+								submit.disabled = true;
+								if (btnText) btnText.textContent = 'Versturen…';
+								// Bouw de template parameters
+								const params = {
+								from_name:  document.getElementById('ct-name')?.value.trim()    || '',
+								from_email: document.getElementById('ct-email')?.value.trim()   || '',
+								company:    document.getElementById('ct-company')?.value.trim() || '—',
+								subject:    document.getElementById('ct-subject')?.value        || '—',
+								message:    document.getElementById('ct-message')?.value.trim() || '',
+								reply_to:   document.getElementById('ct-email')?.value.trim()   || '',
+								};
+								try {
+								await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, params);
+								// Succesvol verzonden → toon bevestiging
+								form.style.transition = 'opacity .3s ease, transform .3s ease';
+								form.style.opacity    = '0';
+								form.style.transform  = 'translateY(-8px)';
+								setTimeout(() => {
+								form.style.display = 'none';
+								success.classList.add('ct-form__success--visible');
+								}, 320);
+								} catch (err) {
+								// Fout bij verzenden → toon melding onder de knop
+								console.error('EmailJS error:', err);
+								submit.disabled = false;
+								if (btnText) btnText.textContent = 'Verstuur bericht';
+								let errMsg = document.getElementById('ct-send-error');
+								if (!errMsg) {
+								errMsg = document.createElement('p');
+								errMsg.id = 'ct-send-error';
+								errMsg.style.cssText = 'color:#ef4444;font-size:13px;text-align:center;margin-top:8px;';
+								submit.parentNode.insertBefore(errMsg, submit.nextSibling);
+								}
+								errMsg.textContent = 'Er ging iets mis. Probeer opnieuw of mail ons rechtstreeks.';
+								}
+								});
+								})();
+								</script>
+		<footer class="site-footer">
+			<div class="container footer-wrapper hidden">
+				<div class="footer-col">
+					<h4>IRIS</h4>
+					<p class="footer-text">
+						  Market trend intelligence for forward-thinking companies
+					</p>
+					<div class="social-links">
+						<a href="#https://www.linkedin.com/company/tomorrowlab/posts/?feedView=all" aria-label="LinkedIn">in</a>
+					</div>
+				</div>
+				<div class="footer-col">
+					<h4>Product</h4>
+					<ul>
+						<li><a href="Features.html">Features</a></li>
+			            <li><a href="Pricing.html">Pricing</a></li>
+						<li><a href="https://docs.google.com/forms/d/e/1FAIpQLSeLOEqtjiaY5nZIv6wPE6rEl34T9l4YHGsAicAakZv-iF4W0w/viewform">Free scan</a></li>
+					</ul>
+				</div>
+				<div class="footer-col">
+					<h4>Bedrijf</h4>
+					<ul>
+			        <li><a href="About.html">About</a></li>
+			        <li><a href="Contact.html">contact</a></li> 
+					</ul>
+				</div>
+				<div class="footer-col">
+					<h4>Legal</h4>
+					<ul>
+						<li><a href="#privacy">Privacy Policy</a></li>
+						<li><a href="#terms">Terms and Conditions</a></li>
+					</ul>
+				</div>
+			</div>
+			<div class="footer-bottom">
+				<p>© 2026 IRIS. All rights reserved.</p>
+			</div>
+		</footer>
+		<script src="../scripts/main.js"></script>
+		<script src="../js.js"></script>
+		 <!-- Optional JavaScript -->
+   		 <!-- jQuery first, then Popper.js, then Bootstrap JS -->     
+	</body>
+</html>

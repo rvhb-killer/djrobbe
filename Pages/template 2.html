@@ -1,0 +1,968 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EWS — Early Warning System</title>
+<link href="https://fonts.googleapis.com/css2?family=Epilogue:wght@400;500;600;700;800&family=Figtree:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+/* ── TOKENS ─────────────────────────────────────── */
+:root {
+  --bg:       #f5f6f8;
+  --surface:  #ffffff;
+  --card:     #ffffff;
+  --border:   #e8eaee;
+  --border2:  #d2d5db;
+  --text:     #111827;
+  --muted:    #6b7280;
+  --dim:      #9ca3af;
+
+  --green:    #16a34a;
+  --green-bg: #dcfce7;
+  --green-mid:#bbf7d0;
+  --amber:    #d97706;
+  --amber-bg: #fef3c7;
+  --amber-mid:#fde68a;
+  --red:      #dc2626;
+  --red-bg:   #fee2e2;
+  --red-mid:  #fecaca;
+  --blue:     #2563eb;
+  --blue-bg:  #dbeafe;
+
+  --sidebar:  220px;
+  --r:        10px;
+  --r-sm:     6px;
+
+  --font-h: 'Epilogue', sans-serif;
+  --font-b: 'Figtree', sans-serif;
+}
+
+/* ── RESET ──────────────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font-b);background:var(--bg);color:var(--text);font-size:14px;line-height:1.55;overflow-x:hidden;}
+
+/* ── SIDEBAR ────────────────────────────────────── */
+.sidebar{
+  position:fixed;top:0;left:0;width:var(--sidebar);height:100vh;
+  background:var(--surface);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;z-index:200;
+}
+.sb-brand{
+  padding:22px 20px 18px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;
+}
+.sb-logo{
+  width:36px;height:36px;border-radius:9px;
+  background:linear-gradient(135deg,#1e40af,#3b82f6);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-h);font-weight:800;color:#fff;font-size:14px;letter-spacing:-0.5px;
+}
+.sb-name{font-family:var(--font-h);font-weight:700;font-size:15px;letter-spacing:-0.3px;}
+.sb-sub{font-size:10px;color:var(--muted);margin-top:1px;}
+
+.sb-user{
+  padding:14px 20px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:10px;
+}
+.avatar{width:32px;height:32px;border-radius:50%;background:#e5e7eb;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.user-info .name{font-size:12px;font-weight:600;}
+.user-info .role{font-size:10px;color:var(--muted);margin-top:1px;}
+
+.sb-nav{flex:1;padding:10px 0;}
+.nav-sect{font-size:9px;color:var(--dim);letter-spacing:1.8px;text-transform:uppercase;padding:14px 20px 5px;font-family:var(--font-h);}
+.nav-item{
+  display:flex;align-items:center;gap:10px;padding:10px 20px;
+  cursor:pointer;color:var(--muted);font-size:13px;font-weight:500;
+  border-left:3px solid transparent;transition:all .14s;position:relative;
+}
+.nav-item:hover{color:var(--text);background:#f9fafb;}
+.nav-item.active{color:var(--blue);border-left-color:var(--blue);background:var(--blue-bg);}
+.nav-ico{font-size:16px;width:20px;text-align:center;}
+.nav-badge{
+  margin-left:auto;font-size:10px;background:var(--red);color:#fff;
+  padding:1px 7px;border-radius:10px;font-family:var(--font-h);font-weight:700;
+}
+.nav-badge.ok{background:var(--amber);}
+
+.sb-foot{
+  padding:14px 20px;border-top:1px solid var(--border);
+  font-size:10px;color:var(--muted);
+}
+.live-row{display:flex;align-items:center;gap:6px;margin-bottom:3px;}
+.live-dot{width:6px;height:6px;border-radius:50%;background:#16a34a;animation:blink 2s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* ── TOPBAR ─────────────────────────────────────── */
+.main{margin-left:var(--sidebar);min-height:100vh;}
+.topbar{
+  position:sticky;top:0;z-index:100;background:rgba(255,255,255,.9);
+  backdrop-filter:blur(10px);border-bottom:1px solid var(--border);
+  height:56px;padding:0 28px;display:flex;align-items:center;justify-content:space-between;
+}
+.tb-title{font-family:var(--font-h);font-size:16px;font-weight:700;letter-spacing:-.3px;}
+.tb-right{display:flex;align-items:center;gap:10px;}
+.tb-clock{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;}
+.btn{
+  padding:7px 16px;border-radius:var(--r-sm);font-size:12px;font-weight:600;
+  cursor:pointer;border:1px solid var(--border2);background:var(--surface);
+  color:var(--muted);transition:all .13s;font-family:var(--font-b);
+}
+.btn:hover{background:#f3f4f6;color:var(--text);}
+.btn.primary{background:var(--blue);border-color:var(--blue);color:#fff;}
+.btn.primary:hover{background:#1d4ed8;}
+.btn.danger{background:var(--red-bg);border-color:var(--red-mid);color:var(--red);}
+.btn.success{background:var(--green-bg);border-color:var(--green-mid);color:var(--green);}
+
+/* ── PAGES ──────────────────────────────────────── */
+.page{display:none;padding:24px 28px;animation:fadeUp .22s ease;}
+.page.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── LAYOUT HELPERS ─────────────────────────────── */
+.row{display:flex;gap:16px;margin-bottom:16px;}
+.row>*{min-width:0;}
+.col{display:flex;flex-direction:column;gap:16px;}
+.f1{flex:1;} .f2{flex:2;} .f3{flex:3;}
+
+/* ── PANEL ──────────────────────────────────────── */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);overflow:hidden;}
+.ph{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
+.pt{font-family:var(--font-h);font-size:13px;font-weight:700;letter-spacing:-.2px;}
+.pb{padding:16px 18px;}
+
+/* ── BADGES ─────────────────────────────────────── */
+.badge{
+  display:inline-flex;align-items:center;gap:4px;
+  padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700;
+  font-family:var(--font-h);text-transform:uppercase;letter-spacing:.4px;
+}
+.badge.telaat{background:var(--red-bg);color:var(--red);}
+.badge.actie{background:var(--amber-bg);color:var(--amber);}
+.badge.toekomst{background:var(--green-bg);color:var(--green);}
+.badge.info{background:var(--blue-bg);color:var(--blue);}
+.bdot{width:5px;height:5px;border-radius:50%;background:currentColor;}
+
+/* ── METRIC CARDS ───────────────────────────────── */
+.metric{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:16px 20px;position:relative;overflow:hidden;
+}
+.metric .m-lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px;font-family:var(--font-h);margin-bottom:6px;}
+.metric .m-val{font-family:var(--font-h);font-size:32px;font-weight:800;line-height:1;letter-spacing:-1px;}
+.metric .m-sub{font-size:11px;color:var(--muted);margin-top:5px;}
+.metric.red .m-val{color:var(--red);}
+.metric.amber .m-val{color:var(--amber);}
+.metric.green .m-val{color:var(--green);}
+.metric.blue .m-val{color:var(--blue);}
+.metric-stripe{position:absolute;top:0;left:0;width:4px;height:100%;}
+.metric.red .metric-stripe{background:var(--red);}
+.metric.amber .metric-stripe{background:var(--amber);}
+.metric.green .metric-stripe{background:var(--green);}
+.metric.blue .metric-stripe{background:var(--blue);}
+
+/* ── SIGNAL ROWS ────────────────────────────────── */
+.sig-row{
+  display:flex;align-items:center;gap:12px;
+  padding:10px 18px;border-bottom:1px solid var(--border);
+  cursor:pointer;transition:background .12s;
+}
+.sig-row:last-child{border-bottom:none;}
+.sig-row:hover{background:#f9fafb;}
+.sig-num{font-family:var(--font-h);font-size:11px;color:var(--dim);width:18px;flex-shrink:0;}
+.sig-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.sig-dot.telaat{background:var(--red);}
+.sig-dot.actie{background:var(--amber);}
+.sig-dot.toekomst{background:var(--green);}
+.sig-body{flex:1;min-width:0;}
+.sig-title{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.sig-meta{font-size:10px;color:var(--muted);margin-top:2px;display:flex;align-items:center;gap:6px;}
+.domain-tag{font-size:10px;padding:1px 6px;border-radius:4px;background:#f3f4f6;color:var(--muted);border:1px solid var(--border2);}
+.sig-score{
+  font-family:var(--font-h);font-size:12px;font-weight:700;
+  padding:3px 8px;border-radius:var(--r-sm);background:#f9fafb;border:1px solid var(--border);
+}
+
+/* ── PRIORITY BOXES ─────────────────────────────── */
+.prio-boxes{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:16px;}
+.prio-box{
+  border-radius:var(--r);padding:18px;cursor:pointer;
+  transition:transform .15s,box-shadow .15s;position:relative;
+  min-height:140px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  border:2px solid transparent;
+}
+.prio-box:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.1);}
+.prio-box.toekomst-box{background:var(--green-bg);border-color:var(--green-mid);}
+.prio-box.actie-box{background:var(--amber-bg);border-color:var(--amber-mid);}
+.prio-box.telaat-box{background:var(--red-bg);border-color:var(--red-mid);}
+.prio-box .pb-count{font-family:var(--font-h);font-size:42px;font-weight:800;line-height:1;}
+.prio-box.toekomst-box .pb-count{color:var(--green);}
+.prio-box.actie-box .pb-count{color:var(--amber);}
+.prio-box.telaat-box .pb-count{color:var(--red);}
+.prio-box .pb-label{font-family:var(--font-h);font-size:12px;font-weight:700;letter-spacing:.3px;margin-top:5px;}
+.prio-box.toekomst-box .pb-label{color:var(--green);}
+.prio-box.actie-box .pb-label{color:var(--amber);}
+.prio-box.telaat-box .pb-label{color:var(--red);}
+.prio-box .pb-sub{font-size:10px;color:var(--muted);margin-top:4px;text-align:center;}
+.prio-add{
+  position:absolute;top:10px;right:10px;
+  width:22px;height:22px;border-radius:50%;
+  background:rgba(0,0,0,.06);
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;color:inherit;cursor:pointer;transition:background .12s;
+}
+.prio-add:hover{background:rgba(0,0,0,.12);}
+
+/* ── SIGNAL CARDS ───────────────────────────────── */
+.sig-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;padding:14px;}
+.sig-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r-sm);
+  padding:12px;cursor:pointer;transition:all .13s;
+}
+.sig-card:hover{border-color:var(--border2);box-shadow:0 2px 8px rgba(0,0,0,.06);}
+.sc-id{font-size:10px;color:var(--dim);font-family:var(--font-h);margin-bottom:4px;}
+.sc-title{font-size:12px;font-weight:600;line-height:1.4;margin-bottom:8px;}
+.sc-foot{display:flex;align-items:center;justify-content:space-between;gap:6px;}
+.sc-actions{display:flex;gap:5px;flex-wrap:wrap;}
+.sc-btn{padding:3px 8px;border-radius:4px;font-size:10px;font-weight:600;cursor:pointer;border:1px solid;transition:all .12s;font-family:var(--font-h);}
+.sc-btn.primary{background:var(--blue-bg);border-color:#93c5fd;color:var(--blue);}
+.sc-btn.danger{background:var(--red-bg);border-color:var(--red-mid);color:var(--red);}
+.sc-btn.ghost{background:#f9fafb;border-color:var(--border2);color:var(--muted);}
+.sc-btn:hover{opacity:.8;}
+
+/* ── RADAR SVG ──────────────────────────────────── */
+.radar-container{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:16px;position:relative;
+}
+.radar-container svg{width:100%;height:auto;display:block;}
+
+/* ── DETAIL PANEL ───────────────────────────────── */
+.detail-panel{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  overflow:hidden;
+}
+.detail-section{border-bottom:1px solid var(--border);}
+.detail-section:last-child{border-bottom:none;}
+.ds-head{
+  padding:10px 14px;background:#f9fafb;
+  font-size:10px;color:var(--muted);text-transform:uppercase;
+  letter-spacing:1px;font-family:var(--font-h);font-weight:700;
+}
+.ds-body{padding:14px;}
+
+.score-row{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.score-row:last-child{margin-bottom:0;}
+.s-lbl{font-size:11px;color:var(--muted);width:90px;}
+.s-track{flex:1;height:5px;background:#f3f4f6;border-radius:3px;overflow:hidden;}
+.s-fill{height:100%;border-radius:3px;transition:width .5s;}
+.s-val{font-family:var(--font-h);font-size:11px;font-weight:700;width:24px;text-align:right;}
+
+.crit-item{display:flex;gap:8px;padding:5px 0;border-bottom:1px solid #f9fafb;font-size:12px;}
+.crit-item:last-child{border-bottom:none;}
+.ci-ok{color:var(--green);font-weight:700;}
+.ci-no{color:var(--red);font-weight:700;}
+
+.ai-box{
+  background:linear-gradient(135deg,#eff6ff,#f0fdf4);
+  border:1px solid #bfdbfe;border-radius:var(--r-sm);
+  padding:12px;font-size:12px;line-height:1.65;color:#374151;
+}
+.ai-lbl{font-family:var(--font-h);font-size:9px;color:var(--blue);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;font-weight:700;}
+
+.hist-item{display:flex;gap:10px;padding:7px 0;border-bottom:1px solid #f9fafb;}
+.hist-item:last-child{border-bottom:none;}
+.h-time{font-size:10px;color:var(--dim);width:72px;flex-shrink:0;padding-top:1px;font-family:var(--font-h);}
+.h-body{font-size:12px;line-height:1.5;}
+.h-user{font-size:10px;color:var(--muted);margin-top:2px;}
+
+.feedback-ta{
+  width:100%;border:1px solid var(--border2);border-radius:var(--r-sm);
+  padding:10px;font-family:var(--font-b);font-size:13px;color:var(--text);
+  resize:none;outline:none;transition:border-color .14s;background:var(--surface);
+}
+.feedback-ta:focus{border-color:var(--blue);}
+
+/* ── HIGHLIGHTED BOX (Strategy top10) ───────────── */
+.highlight-box{
+  border:2px solid #93c5fd;border-radius:var(--r);background:#eff6ff;
+  padding:14px 16px;margin-bottom:14px;
+}
+.hb-title{font-family:var(--font-h);font-size:12px;font-weight:700;color:var(--blue);margin-bottom:10px;letter-spacing:-.1px;}
+
+/* ── NAV CARDS (strategy bottom) ────────────────── */
+.nav-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.nav-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:16px 18px;cursor:pointer;transition:all .15s;
+}
+.nav-card:hover{border-color:#93c5fd;box-shadow:0 4px 16px rgba(37,99,235,.1);transform:translateY(-2px);}
+.nc-label{font-family:var(--font-h);font-size:13px;font-weight:700;margin-bottom:6px;}
+.nc-desc{font-size:11px;color:var(--muted);line-height:1.5;}
+.nc-arrow{margin-top:12px;font-size:18px;color:var(--blue);}
+
+/* ── OBJECTIVE BAR ───────────────────────────────── */
+.obj-bar{height:6px;border-radius:3px;background:#f3f4f6;overflow:hidden;margin-top:6px;}
+.obj-fill{height:100%;border-radius:3px;background:linear-gradient(90deg,#3b82f6,#10b981);}
+
+/* ── SIGNALS TABLE ─────────────────────────────────*/
+.sig-table{width:100%;border-collapse:collapse;}
+.sig-table th{padding:9px 14px;text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--muted);border-bottom:1px solid var(--border);font-family:var(--font-h);font-weight:700;background:#f9fafb;}
+.sig-table td{padding:9px 14px;border-bottom:1px solid var(--border);font-size:12px;vertical-align:middle;}
+.sig-table tr:last-child td{border-bottom:none;}
+.sig-table tr:hover td{background:#f9fafb;}
+.sig-table tr{cursor:pointer;}
+
+/* ── SCROLLBARS ─────────────────────────────────── */
+::-webkit-scrollbar{width:4px;height:4px;}
+::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px;}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════
+     SIDEBAR
+═══════════════════════════════════════════════ -->
+<aside class="sidebar">
+  <div class="sb-brand">
+    <div class="sb-logo">EWS</div>
+    <div>
+      <div class="sb-name">EWS Platform</div>
+      <div class="sb-sub">Early Warning System v2</div>
+    </div>
+  </div>
+
+  <div class="sb-user">
+    <div class="avatar">👤</div>
+    <div class="user-info">
+      <div class="name">K. De Smet</div>
+      <div class="role">Management</div>
+    </div>
+  </div>
+
+  <nav class="sb-nav">
+    <div class="nav-sect">Navigatie</div>
+    <div class="nav-item active" onclick="nav('strategy',this)">
+      <span class="nav-ico">📋</span> Strategy
+    </div>
+    <div class="nav-item" onclick="nav('analyse',this)">
+      <span class="nav-ico">📡</span> Analyse
+    </div>
+    <div class="nav-item" onclick="nav('decision',this)">
+      <span class="nav-ico">⚡</span> Decisionmaking
+      <span class="nav-badge ok">7</span>
+    </div>
+  </nav>
+
+  <div class="sb-foot">
+    <div class="live-row"><div class="live-dot"></div><span>Live sync</span></div>
+    <div id="clock">--:--:--</div>
+    <div style="margin-top:2px;color:var(--dim);">247 actieve signalen</div>
+  </div>
+</aside>
+
+<!-- ═══════════════════════════════════════════════
+     TOPBAR
+═══════════════════════════════════════════════ -->
+<main class="main">
+<div class="topbar">
+  <div class="tb-title" id="pageTitle">Strategy</div>
+  <div class="tb-right">
+    <span class="tb-clock" id="dateLabel"></span>
+    <button class="btn" onclick="refresh()">↻ Refresh</button>
+    <button class="btn primary" onclick="alert('Nieuw signaal toevoegen...')">+ Signaal</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE: STRATEGY
+═══════════════════════════════════════════════ -->
+<div class="page active" id="pg-strategy">
+  <div class="row" style="margin-bottom:16px;">
+
+    <!-- Left: main content -->
+    <div class="f3 col">
+
+      <!-- Objective -->
+      <div class="panel">
+        <div class="ph">
+          <div class="pt">Objective</div>
+          <span class="badge info">Q1 2025</span>
+        </div>
+        <div class="pb">
+          <div style="font-size:13px;font-weight:500;margin-bottom:10px;">
+            Zo snel mogelijk te weten komen wat er zou moeten gebeuren, zowel nu als richting de toekomst.
+          </div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:4px;">
+            <span>Voortgang signaalverwerking</span><span>68%</span>
+          </div>
+          <div class="obj-bar"><div class="obj-fill" style="width:68%;"></div></div>
+        </div>
+      </div>
+
+      <!-- Top 10 signals highlighted -->
+      <div class="panel">
+        <div class="ph">
+          <div class="pt">Top 10 signalen om op te letten</div>
+          <div style="display:flex;gap:6px;">
+            <span class="badge telaat"><span class="bdot"></span>Te laat</span>
+            <span class="badge actie"><span class="bdot"></span>In actie</span>
+            <span class="badge toekomst"><span class="bdot"></span>Toekomst</span>
+          </div>
+        </div>
+        <div class="highlight-box" style="margin:14px 18px 0;">
+          <div class="hb-title">🔵 Top 10 signals to look at</div>
+          <div id="top10List"></div>
+        </div>
+        <div style="height:14px;"></div>
+      </div>
+
+    </div>
+
+    <!-- Right: summary cards -->
+    <div style="width:240px;flex-shrink:0;" class="col">
+      <div class="metric red">
+        <div class="metric-stripe"></div>
+        <div class="m-lbl">Te laat</div>
+        <div class="m-val">12</div>
+        <div class="m-sub">↑ +3 vs gisteren</div>
+      </div>
+      <div class="metric amber">
+        <div class="metric-stripe"></div>
+        <div class="m-lbl">In actie schieten</div>
+        <div class="m-val">34</div>
+        <div class="m-sub">Vandaag actief</div>
+      </div>
+      <div class="metric green">
+        <div class="metric-stripe"></div>
+        <div class="m-lbl">Toekomst</div>
+        <div class="m-val">201</div>
+        <div class="m-sub">Monitoring actief</div>
+      </div>
+      <div class="metric blue">
+        <div class="metric-stripe"></div>
+        <div class="m-lbl">Open beslissingen</div>
+        <div class="m-val">8</div>
+        <div class="m-sub">Wachten op input</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Nav cards: Strategy / Decisionmaking / New urgent signals -->
+  <div class="nav-cards">
+    <div class="nav-card" onclick="nav('strategy', document.querySelector('.nav-item'))">
+      <div class="nc-label">📋 Strategy</div>
+      <div class="nc-desc">Bekijk strategisch overzicht, clusters en beweging doorheen de tijd.</div>
+      <div class="nc-arrow">→</div>
+    </div>
+    <div class="nav-card" onclick="nav('decision', document.querySelectorAll('.nav-item')[2])">
+      <div class="nc-label">⚡ Decisionmaking</div>
+      <div class="nc-desc">Prioriteer en handel kritieke signalen af. Zie actie-, urgentie- en tijdlijnstatus.</div>
+      <div class="nc-arrow">→</div>
+    </div>
+    <div class="nav-card" onclick="nav('analyse', document.querySelectorAll('.nav-item')[1])">
+      <div class="nc-label">📡 Nieuwe urgente signalen</div>
+      <div class="nc-desc"><span style="color:var(--red);font-weight:700;">3 nieuwe</span> signalen vereisen onmiddellijke aandacht. Bekijk de radar.</div>
+      <div class="nc-arrow">→</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE: ANALYSE
+═══════════════════════════════════════════════ -->
+<div class="page" id="pg-analyse">
+  <div class="row">
+    <!-- Left: radar + signals table -->
+    <div class="f2 col">
+
+      <!-- Radar -->
+      <div class="radar-container">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+          <div class="pt">Radar — Signaallandschap</div>
+          <div style="display:flex;gap:8px;align-items:center;font-size:11px;color:var(--muted);">
+            <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:50%;background:var(--red);display:inline-block;"></span>Te laat</span>
+            <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:50%;background:var(--amber);display:inline-block;"></span>In actie</span>
+            <span style="display:flex;align-items:center;gap:4px;"><span style="width:10px;height:10px;border-radius:50%;background:#60a5fa;display:inline-block;"></span>Toekomst</span>
+          </div>
+        </div>
+        <svg id="radarSvg" viewBox="0 0 700 370" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+
+      <!-- Signals in progress table -->
+      <div class="panel">
+        <div class="ph">
+          <div class="pt">Signals in progress</div>
+          <span class="badge info" id="sigCount">12 signalen</span>
+        </div>
+        <div style="overflow-x:auto;">
+          <table class="sig-table" id="sigTableAnalyse">
+            <thead>
+              <tr>
+                <th>#</th><th>Signaal</th><th>Domein</th><th>Status</th>
+                <th>Score</th><th>Deadline</th><th>Assigned</th>
+              </tr>
+            </thead>
+            <tbody id="sigTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Right: detail panel (appears on click) -->
+    <div style="width:300px;flex-shrink:0;" id="detailCol">
+      <div class="detail-panel">
+        <div class="ds-head">Signaal detail</div>
+        <div class="ds-body" style="text-align:center;color:var(--dim);padding:40px 20px;">
+          <div style="font-size:32px;margin-bottom:10px;">📡</div>
+          <div style="font-size:12px;">Klik op een signaal<br>om de analyse te zien</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════
+     PAGE: DECISIONMAKING
+═══════════════════════════════════════════════ -->
+<div class="page" id="pg-decision">
+
+  <!-- Top metrics row -->
+  <div class="row" style="gap:12px;">
+    <div class="metric red f1">
+      <div class="metric-stripe"></div>
+      <div class="m-lbl">Totale urgente signalen</div>
+      <div class="m-val">10</div>
+      <div class="m-sub">Vereisen actie vandaag</div>
+    </div>
+    <div class="panel f2">
+      <div class="ph"><div class="pt">Nieuwe urgente signalen</div><span class="badge telaat">3 nieuw</span></div>
+      <div id="urgentShort"></div>
+    </div>
+    <div class="panel" style="width:180px;flex-shrink:0;">
+      <div class="ph"><div class="pt">Verdeling</div></div>
+      <div style="padding:12px;position:relative;height:120px;">
+        <canvas id="distribChart" role="img" aria-label="Verdeling Te laat, In actie, Toekomst"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Priority: 3 boxes -->
+  <div style="font-family:var(--font-h);font-size:13px;font-weight:700;margin-bottom:10px;letter-spacing:-.1px;">
+    Priority
+  </div>
+  <div class="prio-boxes" id="prioBoxes">
+    <div class="prio-box toekomst-box" onclick="togglePrioCards('toekomst')">
+      <div class="prio-add" title="Signaal toevoegen">＋</div>
+      <div class="pb-count">201</div>
+      <div class="pb-label">Toekomst</div>
+      <div class="pb-sub">Monitoring · geen actie vereist</div>
+    </div>
+    <div class="prio-box actie-box" onclick="togglePrioCards('actie')">
+      <div class="prio-add" title="Signaal toevoegen">＋</div>
+      <div class="pb-count">34</div>
+      <div class="pb-label">In actie schieten</div>
+      <div class="pb-sub">Actie vereist · vandaag/morgen</div>
+    </div>
+    <div class="prio-box telaat-box" onclick="togglePrioCards('telaat')">
+      <div class="prio-add" title="Signaal toevoegen">＋</div>
+      <div class="pb-count">12</div>
+      <div class="pb-label">Te laat</div>
+      <div class="pb-sub">Kritiek · onmiddellijk handelen</div>
+    </div>
+  </div>
+
+  <!-- Signal cards expanded per prio -->
+  <div id="prioCards" style="display:none;margin-bottom:16px;">
+    <div class="panel">
+      <div class="ph">
+        <div class="pt" id="prioCardsTitle"></div>
+        <button class="btn" onclick="document.getElementById('prioCards').style.display='none'">✕ Sluit</button>
+      </div>
+      <div class="sig-cards" id="prioCardsGrid"></div>
+    </div>
+  </div>
+
+  <!-- Signals in progress table -->
+  <div class="panel">
+    <div class="ph">
+      <div class="pt">Signals in progress</div>
+      <button class="btn primary" onclick="alert('Beslissing registreren...')">+ Beslissing</button>
+    </div>
+    <div style="overflow-x:auto;">
+      <table class="sig-table">
+        <thead>
+          <tr><th>#</th><th>Signaal</th><th>Domein</th><th>Status</th><th>Score</th><th>Deadline</th><th>Assigned</th><th>Actie</th></tr>
+        </thead>
+        <tbody id="decisionTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</main><!-- /main -->
+
+<script>
+/* ══ DATA ══════════════════════════════════════ */
+const signals = [
+  {id:1, title:'Energieprijzen stijgen kritisch niveau', domain:'Energie', status:'telaat', score:94, source:'Reuters', urgentie:9, impact:9, assigned:'K. De Smet', deadline:'Vandaag'},
+  {id:2, title:'Nieuwe migratiewetgeving EU goedgekeurd', domain:'Politiek', status:'actie', score:82, source:'Belga', urgentie:7, impact:8, assigned:'M. Janssen', deadline:'Morgen'},
+  {id:3, title:'Cyberaanval op kritieke infrastructuur', domain:'Veiligheid', status:'telaat', score:97, source:'CERT.be', urgentie:10, impact:9, assigned:'—', deadline:'Vandaag'},
+  {id:4, title:'Droogte-alert regio Kempen & Polders', domain:'Klimaat', status:'actie', score:76, source:'VMM', urgentie:7, impact:7, assigned:'L. Peeters', deadline:'Morgen'},
+  {id:5, title:'AI-regulering GDpr aanpassing verwacht', domain:'Technologie', status:'actie', score:71, source:'Politico', urgentie:6, impact:8, assigned:'—', deadline:'3 dagen'},
+  {id:6, title:'Ziekenhuiscapaciteit winterpiek risico', domain:'Gezondheid', status:'actie', score:68, source:'Sciensano', urgentie:6, impact:7, assigned:'V. Claes', deadline:'2 weken'},
+  {id:7, title:'Inflatie consumentenprijzen +4.2%', domain:'Economie', status:'actie', score:65, source:'NBB', urgentie:5, impact:7, assigned:'—', deadline:'Volgende week'},
+  {id:8, title:'Stakingen openbaar vervoer gepland', domain:'Sociaal', status:'toekomst', score:55, source:'De Standaard', urgentie:5, impact:5, assigned:'R. Bogaert', deadline:'2 weken'},
+  {id:9, title:'Nucleaire centrale onderhoud vertraging', domain:'Energie', status:'actie', score:78, source:'Engie', urgentie:7, impact:8, assigned:'—', deadline:'Morgen'},
+  {id:10, title:'Grenscontroles Schengenzone tijdelijk', domain:'Politiek', status:'toekomst', score:48, source:'EUobserver', urgentie:4, impact:6, assigned:'M. Janssen', deadline:'1 maand'},
+  {id:11, title:'Overstromingsrisico Maasgebied hoog', domain:'Klimaat', status:'telaat', score:88, source:'Waterinfo', urgentie:9, impact:8, assigned:'L. Peeters', deadline:'Vandaag'},
+  {id:12, title:'Tekort microchips automotive sector', domain:'Economie', status:'toekomst', score:44, source:'FT', urgentie:4, impact:6, assigned:'—', deadline:'3 maanden'},
+];
+
+const aiReasonings = {
+  1:'Op basis van prijsdata en geopolitieke spanningen is de kans op verdere escalatie hoog. Historische vergelijking met de energiecrisis van 2022 toont vergelijkbare indicatoren. Directe ministerraadbespreking aanbevolen.',
+  3:'Aanvalspatronen komen overeen met APT-groepen eerder gelinkt aan staatsgefinancierde actoren. Kritieke SCADA-systemen zijn kwetsbaar. Onmiddellijke isolatie sterk aanbevolen.',
+  default:'Op basis van meerdere databronnen en historische vergelijkingen is dit signaal geclassificeerd. Verdere analyse toont een stijgende trend over de komende 2 weken.',
+};
+
+/* ══ CLOCK ═════════════════════════════════════ */
+function tick(){
+  const n=new Date();
+  document.getElementById('clock').textContent=n.toLocaleTimeString('nl-BE');
+  document.getElementById('dateLabel').textContent=n.toLocaleDateString('nl-BE',{weekday:'long',year:'numeric',month:'long',day:'numeric'});
+}
+tick(); setInterval(tick,1000);
+
+/* ══ NAVIGATION ════════════════════════════════ */
+const pageTitles={strategy:'Strategy',analyse:'Analyse',decision:'Decisionmaking'};
+function nav(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
+  document.getElementById('pg-'+id).classList.add('active');
+  if(el) el.classList.add('active');
+  document.getElementById('pageTitle').textContent=pageTitles[id];
+  if(id==='analyse') initRadar();
+}
+
+function refresh(){
+  const d=document.querySelector('.live-dot');
+  d.style.background='var(--amber)'; setTimeout(()=>d.style.background='#16a34a',800);
+}
+
+/* ══ TOP 10 ════════════════════════════════════ */
+function renderTop10(){
+  const sorted=[...signals].sort((a,b)=>b.score-a.score).slice(0,10);
+  document.getElementById('top10List').innerHTML=sorted.map((s,i)=>`
+    <div class="sig-row" style="padding:7px 0;border-bottom:1px solid #dbeafe;" onclick="openDetail(${s.id})">
+      <div class="sig-num">${i+1}</div>
+      <div class="sig-dot ${s.status}"></div>
+      <div class="sig-body">
+        <div class="sig-title" style="font-size:12px;">${s.title}</div>
+        <div class="sig-meta"><span class="domain-tag">${s.domain}</span>${s.deadline}</div>
+      </div>
+      <div class="sig-score" style="color:${s.score>80?'var(--red)':s.score>60?'var(--amber)':'var(--blue)'};">${s.score}</div>
+    </div>`).join('');
+}
+
+/* ══ RADAR (semicircle SVG) ════════════════════ */
+const domains=['Politiek','Economie','Energie','Klimaat','Technologie','Sociaal','Veiligheid','Gezondheid','Justitie','Defensie'];
+let radarInited=false;
+
+function initRadar(){
+  if(radarInited)return; radarInited=true;
+  const svg=document.getElementById('radarSvg');
+  const W=700,H=360,cx=350,cy=350;
+  const radii=[50,100,160,230,300];
+  const colors=['#fee2e2','#fef3c7','#dcfce7','#dbeafe','#f5f3ff'];
+  const strokeColors=['#fca5a5','#fde68a','#bbf7d0','#bfdbfe','#ddd6fe'];
+
+  let html='';
+
+  // Semicircle arcs (filled zones)
+  for(let i=radii.length-1;i>=0;i--){
+    html+=`<path d="M${cx-radii[i]},${cy} A${radii[i]},${radii[i]} 0 0,1 ${cx+radii[i]},${cy} Z" fill="${colors[i]}" stroke="${strokeColors[i]}" stroke-width="1"/>`;
+  }
+
+  // Domain lines + labels (like spokes of a fan)
+  const nDoms=domains.length;
+  for(let i=0;i<=nDoms;i++){
+    const angle=Math.PI*i/nDoms; // 0..PI
+    const lx=cx-Math.cos(angle)*radii[4];
+    const ly=cy-Math.sin(angle)*radii[4];
+    html+=`<line x1="${cx}" y1="${cy}" x2="${lx}" y2="${ly}" stroke="rgba(0,0,0,.08)" stroke-width="1"/>`;
+  }
+  // Domain labels
+  for(let i=0;i<nDoms;i++){
+    const angle=Math.PI*(i+0.5)/nDoms;
+    const lx=cx-Math.cos(angle)*(radii[4]+18);
+    const ly=cy-Math.sin(angle)*(radii[4]+18);
+    const anchor=lx<cx-10?'end':lx>cx+10?'start':'middle';
+    html+=`<text x="${lx}" y="${ly}" text-anchor="${anchor}" dominant-baseline="middle" font-size="10" fill="#6b7280" font-family="Figtree,sans-serif">${domains[i]}</text>`;
+  }
+
+  // Zone labels
+  const zLabels=['Kritiek','Urgent','Actie','Aandacht','Toekomst'];
+  for(let i=0;i<radii.length;i++){
+    const r=(i===0?radii[0]/2:(radii[i]+radii[i-1])/2+5);
+    html+=`<text x="${cx}" y="${cy-r}" text-anchor="middle" dominant-baseline="middle" font-size="9" fill="rgba(0,0,0,.35)" font-family="Figtree,sans-serif">${zLabels[i]}</text>`;
+  }
+
+  // Flat baseline
+  html+=`<line x1="${cx-radii[4]-20}" y1="${cy}" x2="${cx+radii[4]+20}" y2="${cy}" stroke="rgba(0,0,0,.15)" stroke-width="1.5"/>`;
+
+  // Scatter dots from signal data
+  const dotColors={telaat:'#dc2626',actie:'#d97706',toekomst:'#60a5fa'};
+  const allDots=[];
+
+  // Place signals as dots
+  signals.forEach(s=>{
+    // domain index -> angle
+    const di=domains.indexOf(s.domain); 
+    const domAngle=di>=0 ? Math.PI*(di+0.5+Math.random()*0.7-0.35)/domains.length : Math.PI*Math.random();
+    // urgency -> radius (high urgency = small radius = inner zone)
+    const maxR=radii[4];
+    const urgR=(1-s.urgentie/12)*maxR*0.95+5;
+    const finalR=Math.max(10,Math.min(urgR,maxR-8));
+    const nx=cx-Math.cos(domAngle)*finalR;
+    const ny=cy-Math.sin(domAngle)*finalR;
+    const r=s.status==='telaat'?7:s.status==='actie'?5.5:4;
+    allDots.push({s,x:nx,y:ny,r,c:dotColors[s.status]});
+  });
+
+  // Generate extra background dots
+  for(let i=0;i<80;i++){
+    const angle=Math.PI*(0.05+Math.random()*0.9);
+    const zoneProb=Math.random();
+    let radius;
+    if(zoneProb<0.08)radius=10+Math.random()*40;
+    else if(zoneProb<0.2)radius=50+Math.random()*60;
+    else if(zoneProb<0.45)radius=100+Math.random()*80;
+    else if(zoneProb<0.75)radius=180+Math.random()*70;
+    else radius=250+Math.random()*48;
+    const col=radius<55?'#dc2626':radius<120?'#d97706':'#60a5fa';
+    const x=cx-Math.cos(angle)*radius, y=cy-Math.sin(angle)*radius;
+    allDots.push({x,y,r:3+Math.random()*2.5,c:col,bg:true});
+  }
+
+  allDots.forEach(d=>{
+    const op=d.bg?0.55:0.85;
+    html+=`<circle cx="${d.x.toFixed(1)}" cy="${d.y.toFixed(1)}" r="${d.r}" fill="${d.c}" fill-opacity="${op}" stroke="white" stroke-width="${d.bg?0:1.5}" style="cursor:${d.bg?'default':'pointer'}" ${d.s?`onclick="openDetail(${d.s.id})"`:''} ${d.s?`title="${d.s.title}"`:''}>`;
+    if(d.s) html+=`<title>${d.s.title} — ${d.s.domain} (score ${d.s.score})</title>`;
+    html+=`</circle>`;
+  });
+
+  svg.innerHTML=html;
+}
+
+/* ══ SIGNAL TABLE (Analyse) ════════════════════ */
+function renderAnalyseTable(){
+  document.getElementById('sigTableBody').innerHTML=signals.map(s=>`
+    <tr onclick="openDetail(${s.id})">
+      <td style="color:var(--dim);font-family:var(--font-h);font-size:11px;">${s.id}</td>
+      <td style="font-weight:600;">${s.title}</td>
+      <td><span class="domain-tag">${s.domain}</span></td>
+      <td><span class="badge ${s.status}">${s.status==='telaat'?'Te laat':s.status==='actie'?'In actie':'Toekomst'}</span></td>
+      <td style="font-family:var(--font-h);font-weight:700;color:${s.score>80?'var(--red)':s.score>60?'var(--amber)':'var(--blue)'};">${s.score}</td>
+      <td style="color:${s.deadline==='Vandaag'?'var(--red)':'var(--muted)'};">${s.deadline}</td>
+      <td style="color:var(--muted);">${s.assigned}</td>
+    </tr>`).join('');
+}
+
+/* ══ DETAIL PANEL ══════════════════════════════ */
+function openDetail(id){
+  const s=signals.find(x=>x.id===id);
+  if(!s)return;
+
+  // Highlight active row
+  document.querySelectorAll('#sigTableBody tr').forEach(tr=>tr.style.background='');
+  const rows=document.querySelectorAll('#sigTableBody tr');
+  if(rows[id-1]) rows[id-1].style.background='#eff6ff';
+
+  const reasoning=aiReasonings[id]||aiReasonings.default;
+  const criteria=[
+    {ok:s.score>60, text:'Drempelwaarde overschreden (score >60)'},
+    {ok:s.urgentie>=7, text:`Hoge urgentie (${s.urgentie}/10)`},
+    {ok:s.impact>=7, text:`Significante impact (${s.impact}/10)`},
+    {ok:s.assigned!=='—', text:`Verantwoordelijke: ${s.assigned!=='—'?s.assigned:'niet aangewezen'}`},
+    {ok:s.status!=='toekomst', text:'Tijdkritisch karakter vastgesteld'},
+  ];
+  const statusColor=s.status==='telaat'?'var(--red)':s.status==='actie'?'var(--amber)':'var(--green)';
+
+  document.getElementById('detailCol').innerHTML=`
+    <div class="detail-panel">
+      <div class="ds-head" style="display:flex;align-items:center;justify-content:space-between;">
+        <span>Signaal detail</span>
+        <span class="badge ${s.status}">${s.status==='telaat'?'Te laat':s.status==='actie'?'In actie':'Toekomst'}</span>
+      </div>
+
+      <div class="detail-section">
+        <div class="ds-body">
+          <div style="font-size:14px;font-weight:700;line-height:1.4;margin-bottom:8px;font-family:var(--font-h);">${s.title}</div>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;">
+            <span class="domain-tag">${s.domain}</span>
+            <span style="font-size:10px;color:var(--muted);">📡 ${s.source}</span>
+            <span style="font-size:10px;color:${s.deadline==='Vandaag'?'var(--red)':'var(--muted)'};">⏱ ${s.deadline}</span>
+          </div>
+          <div style="font-size:11px;color:var(--muted);">Assigned: <strong>${s.assigned}</strong></div>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <div class="ds-head">🤖 AI-redenering</div>
+        <div class="ds-body">
+          <div class="ai-box">
+            <div class="ai-lbl">✦ Analyse</div>${reasoning}
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <div class="ds-head">📊 Scores</div>
+        <div class="ds-body">
+          ${[
+            ['Urgentie', s.urgentie*10, s.urgentie>=8?'var(--red)':s.urgentie>=6?'var(--amber)':'var(--blue)'],
+            ['Impact', s.impact*10, s.impact>=8?'var(--red)':s.impact>=6?'var(--amber)':'var(--blue)'],
+            ['Relevantie', s.score, s.score>=80?'var(--red)':s.score>=60?'var(--amber)':'var(--blue)'],
+            ['Betrouwbaarheid', 85, 'var(--green)'],
+            ['Tijdgevoeligheid', s.status==='telaat'?95:s.status==='actie'?65:30, statusColor],
+          ].map(([l,v,c])=>`
+            <div class="score-row">
+              <div class="s-lbl">${l}</div>
+              <div class="s-track"><div class="s-fill" style="width:${v}%;background:${c};"></div></div>
+              <div class="s-val" style="color:${c};">${v}</div>
+            </div>`).join('')}
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <div class="ds-head">✅ Criteria</div>
+        <div class="ds-body">
+          ${criteria.map(c=>`
+            <div class="crit-item">
+              <span class="${c.ok?'ci-ok':'ci-no'}">${c.ok?'✓':'✗'}</span>
+              <span>${c.text}</span>
+            </div>`).join('')}
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <div class="ds-head">📈 Historiek</div>
+        <div class="ds-body">
+          <div class="hist-item">
+            <div class="h-time">Vandaag 09:14</div>
+            <div><div class="h-body">Status bijgewerkt naar "${s.status==='telaat'?'Te laat':s.status==='actie'?'In actie':'Toekomst'}"</div><div class="h-user">Systeem</div></div>
+          </div>
+          <div class="hist-item">
+            <div class="h-time">Gisteren 16:42</div>
+            <div><div class="h-body">Eerste scoring: ${s.score-5}. Bron ${s.source} bevestigd.</div><div class="h-user">${s.assigned!=='—'?s.assigned:'Analist'}</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="detail-section">
+        <div class="ds-head">💬 Feedback & Beslissing</div>
+        <div class="ds-body">
+          <textarea class="feedback-ta" rows="3" placeholder="Voeg beslissing of feedback toe..."></textarea>
+          <div style="display:flex;gap:8px;margin-top:8px;flex-wrap:wrap;">
+            <button class="btn danger" onclick="alert('Escalatie gestart!')">🚨 Escaleer</button>
+            <button class="btn primary" onclick="alert('Signaal toegewezen!')">👤 Assign</button>
+            <button class="btn success" onclick="alert('Afgehandeld!')">✓ OK</button>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+/* ══ URGENT SHORT LIST ═════════════════════════ */
+function renderUrgentShort(){
+  const u=signals.filter(s=>s.status==='telaat').slice(0,3);
+  document.getElementById('urgentShort').innerHTML=u.map(s=>`
+    <div class="sig-row" style="padding:8px 16px;" onclick="openDetail(${s.id})">
+      <div class="sig-dot telaat"></div>
+      <div class="sig-body">
+        <div class="sig-title" style="font-size:12px;">${s.title}</div>
+        <div class="sig-meta"><span class="domain-tag">${s.domain}</span>${s.deadline}</div>
+      </div>
+      <div class="sig-score" style="color:var(--red);font-size:11px;">${s.score}</div>
+    </div>`).join('');
+}
+
+/* ══ DISTRIBUTION CHART ════════════════════════ */
+function renderDistribChart(){
+  const c={telaat:signals.filter(s=>s.status==='telaat').length,actie:signals.filter(s=>s.status==='actie').length,toekomst:signals.filter(s=>s.status==='toekomst').length};
+  new Chart(document.getElementById('distribChart'),{
+    type:'bar',
+    data:{
+      labels:['Te laat','In actie','Toekomst'],
+      datasets:[{
+        data:[c.telaat,c.actie,c.toekomst],
+        backgroundColor:['#dc2626','#d97706','#16a34a'],
+        borderRadius:5,borderSkipped:false,
+      }]
+    },
+    options:{
+      responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{display:false}},
+      scales:{
+        x:{ticks:{color:'#9ca3af',font:{size:9,family:'Figtree'}},grid:{display:false}},
+        y:{display:false},
+      }
+    }
+  });
+}
+
+/* ══ DECISION TABLE ════════════════════════════ */
+function renderDecisionTable(){
+  document.getElementById('decisionTableBody').innerHTML=signals.map(s=>`
+    <tr onclick="openDecisionDetail(${s.id})">
+      <td style="color:var(--dim);font-family:var(--font-h);font-size:11px;">${s.id}</td>
+      <td style="font-weight:600;">${s.title}</td>
+      <td><span class="domain-tag">${s.domain}</span></td>
+      <td><span class="badge ${s.status}">${s.status==='telaat'?'Te laat':s.status==='actie'?'In actie':'Toekomst'}</span></td>
+      <td style="font-family:var(--font-h);font-weight:700;color:${s.score>80?'var(--red)':s.score>60?'var(--amber)':'var(--blue)'};">${s.score}</td>
+      <td style="color:${s.deadline==='Vandaag'?'var(--red)':'var(--muted)'};">${s.deadline}</td>
+      <td style="color:var(--muted);">${s.assigned}</td>
+      <td>
+        <div style="display:flex;gap:5px;">
+          <button class="sc-btn primary" onclick="event.stopPropagation();alert('Valideren...')">Valideer</button>
+          <button class="sc-btn danger" onclick="event.stopPropagation();alert('Signaal escaleren...')">Escaleer</button>
+        </div>
+      </td>
+    </tr>`).join('');
+}
+function openDecisionDetail(id){ nav('analyse', document.querySelectorAll('.nav-item')[1]); setTimeout(()=>{ initRadar(); openDetail(id); }, 100); }
+
+/* ══ PRIORITY CARDS ════════════════════════════ */
+function togglePrioCards(status){
+  const map={telaat:'Te laat — kritieke signalen',actie:'In actie schieten',toekomst:'Toekomst — monitoring'};
+  const filtered=signals.filter(s=>s.status===status);
+  document.getElementById('prioCardsTitle').textContent=map[status]+` (${filtered.length})`;
+  document.getElementById('prioCardsGrid').innerHTML=filtered.map(s=>`
+    <div class="sig-card" onclick="openDecisionDetail(${s.id})">
+      <div class="sc-id">SIG-${String(s.id).padStart(3,'0')}</div>
+      <div class="sc-title">${s.title}</div>
+      <div class="sc-foot">
+        <span class="badge ${s.status}">${s.status==='telaat'?'Te laat':s.status==='actie'?'In actie':'Toekomst'}</span>
+        <div class="sc-actions">
+          <button class="sc-btn primary" onclick="event.stopPropagation();alert('Analyse...')">Signaal</button>
+          <button class="sc-btn ghost" onclick="event.stopPropagation();alert('Valideer...')">Valideer</button>
+        </div>
+      </div>
+    </div>`).join('');
+  document.getElementById('prioCards').style.display='block';
+  document.getElementById('prioCards').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+/* ══ INIT ══════════════════════════════════════ */
+window.addEventListener('load',()=>{
+  renderTop10();
+  renderAnalyseTable();
+  renderUrgentShort();
+  renderDistribChart();
+  renderDecisionTable();
+});
+</script>
+</body>
+</html>

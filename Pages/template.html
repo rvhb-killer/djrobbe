@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EWS — Early Warning System</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+:root {
+  --bg: #f1f5f9;
+  --surface: #f1f5f9;
+  --card:white;
+  --card-hover: #f8f5f9;
+  --border: rgba(255,255,255,0.07);
+  --border-light: rgba(255,255,255,0.12);
+  --text: #607085;
+  --text-muted: #6b7c9a;
+  --text-dim: #4a5568;
+  --accent: #3b82f6;
+  --accent-glow: rgba(59,130,246,0.15);
+  --green: #10b981;
+  --green-bg: rgba(16,185,129,0.1);
+  --orange: #f59e0b;
+  --orange-bg: rgba(245,158,11,0.1);
+  --red: #ef4444;
+  --red-bg: rgba(239,68,68,0.1);
+  --amber: #f59e0b;
+  --toekomst: #10b981;
+  --actie: #f59e0b;
+  --telaat: #ef4444;
+  --font-head: 'Exo 2';
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'Inter', monospace;
+  --radius: 10px;
+  --radius-sm: 6px;
+  --sidebar-w: 220px;
+
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font-body); background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.5; overflow-x: hidden; }
+
+/* SIDEBAR */
+.sidebar {
+  position: fixed; top: 0; left: 0; width: var(--sidebar-w);
+  height: 100vh; background: var(--surface);
+  border-right: 1px solid var(--border);
+  display: flex; flex-direction: column; z-index: 100;
+}
+.sidebar-logo {
+  padding: 20px 20px 16px;
+  border-bottom: 1px solid var(--border);
+}
+.logo-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--font-head); font-size: 18px; font-weight: 700;
+  color: var(--text); letter-spacing: -0.5px;
+}
+.logo-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  background: var(--accent); box-shadow: 0 0 8px var(--accent);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+.logo-sub { font-size: 10px; color: var(--text-muted); font-family: var(--font-mono); margin-top: 2px; letter-spacing: 1px; text-transform: uppercase; }
+
+.nav { padding: 12px 0; flex: 1; }
+.nav-section { font-size: 10px; color: var(--text-dim); letter-spacing: 1.5px; text-transform: uppercase; padding: 16px 20px 6px; font-family: var(--font-mono); }
+.nav-item {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 20px; cursor: pointer; transition: all 0.15s;
+  border-left: 2px solid transparent; font-size: 13.5px;
+  color: var(--text-muted); position: relative;
+}
+.nav-item:hover { color: var(--text); background: rgba(255,255,255,0.03); }
+.nav-item.active { color: var(--text); border-left-color: var(--accent); background: var(--accent-glow); }
+.nav-item .nav-icon { font-size: 16px; width: 18px; text-align: center; }
+.nav-badge {
+  margin-left: auto; font-size: 10px; font-family: var(--font-mono);
+  background: var(--red); color: white; padding: 1px 6px;
+  border-radius: 10px; min-width: 18px; text-align: center;
+}
+.nav-badge.warn { background: var(--orange); }
+.nav-badge.info { background: var(--accent); }
+
+.sidebar-footer {
+  padding: 14px 20px; border-top: 1px solid var(--border);
+  font-size: 11px; color: var(--text-dim); font-family: var(--font-mono);
+}
+.live-indicator { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; }
+.live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); animation: pulse 1.5s infinite; }
+
+/* MAIN */
+.main { margin-left: var(--sidebar-w); min-height: 100vh; }
+.topbar {
+  position: sticky; top: 0; z-index: 50;
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--border);
+  padding: 0 28px; height: 56px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.topbar-title { font-family: var(--font-head); font-size: 15px; font-weight: 600; }
+.topbar-right { display: flex; align-items: center; gap: 12px; }
+.topbar-clock { font-family: var(--font-mono); font-size: 12px; color: var(--text-muted); }
+.topbar-btn {
+  padding: 6px 14px; border-radius: var(--radius-sm);
+  font-size: 12px; cursor: pointer; border: 1px solid var(--border-light);
+  background: transparent; color: var(--text-muted); transition: all 0.15s;
+}
+.topbar-btn:hover { background: var(--card); color: var(--text); }
+.topbar-btn.primary { background: var(--accent); border-color: var(--accent); color: white; }
+.topbar-btn.primary:hover { background: #2563eb; }
+
+.page { display: none; padding: 24px 28px; }
+.page.active { display: block; }
+
+/* CARDS & GRIDS */
+.grid-4 { display: grid; grid-template-columns: repeat(4,1fr); gap: 12px; margin-bottom: 20px; }
+.grid-3 { display: grid; grid-template-columns: repeat(3,1fr); gap: 16px; margin-bottom: 20px; }
+.grid-2 { display: grid; grid-template-columns: repeat(2,1fr); gap: 16px; margin-bottom: 20px; }
+.grid-2-1 { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 20px; }
+.metric-card {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); padding: 16px 18px;
+  position: relative; overflow: hidden; transition: border-color 0.2s;
+}
+.metric-card:hover { border-color: var(--border-light); }
+.metric-card .mc-label { font-size: 11px; color: var(--text-muted); letter-spacing: 0.5px; margin-bottom: 8px; font-family: var(--font-mono); text-transform: uppercase; }
+.metric-card .mc-value { font-size: 28px; font-family: var(--font-head); font-weight: 700; line-height: 1; }
+.metric-card .mc-sub { font-size: 11px; color: var(--text-muted); margin-top: 6px; }
+.metric-card.danger .mc-value { color: var(--red); }
+.metric-card.warn .mc-value { color: var(--orange); }
+.metric-card.ok .mc-value { color: var(--green); }
+.metric-card.info .mc-value { color: var(--accent); }
+.mc-stripe {
+  position: absolute; top: 0; left: 0; width: 3px; height: 100%;
+  border-radius: var(--radius) 0 0 var(--radius);
+}
+.metric-card.danger .mc-stripe { background: var(--red); }
+.metric-card.warn .mc-stripe { background: var(--orange); }
+.metric-card.ok .mc-stripe { background: var(--green); }
+.metric-card.info .mc-stripe { background: var(--accent); }
+
+.panel {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+}
+.panel-header {
+  padding: 14px 18px; border-bottom: 1px solid var(--border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.panel-title { font-family: var(--font-head); font-size: 13px; font-weight: 600; }
+.panel-body { padding: 0; }
+
+/* STATUS BADGES */
+.badge {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 8px; border-radius: 20px; font-size: 10px;
+  font-family: var(--font-mono); font-weight: 500; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.badge.toekomst { background: var(--green-bg); color: var(--green); border: 1px solid rgba(16,185,129,0.2); }
+.badge.actie { background: var(--orange-bg); color: var(--orange); border: 1px solid rgba(245,158,11,0.2); }
+.badge.telaat { background: var(--red-bg); color: var(--red); border: 1px solid rgba(239,68,68,0.2); }
+.badge.info { background: rgba(59,130,246,0.1); color: var(--accent); border: 1px solid rgba(59,130,246,0.2); }
+.badge-dot { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+/* SIGNAL LIST */
+.signal-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 18px; border-bottom: 1px solid var(--border);
+  transition: background 0.12s; cursor: pointer;
+}
+.signal-row:last-child { border-bottom: none; }
+.signal-row:hover { background: rgba(255,255,255,0.025); }
+.signal-rank { font-family: var(--font-mono); font-size: 11px; color: var(--text-dim); width: 20px; }
+.signal-status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.signal-status-dot.toekomst { background: var(--green); }
+.signal-status-dot.actie { background: var(--orange); }
+.signal-status-dot.telaat { background: var(--red); box-shadow: 0 0 6px var(--red); }
+.signal-content { flex: 1; min-width: 0; }
+.signal-title { font-size: 13px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.signal-meta { font-size: 11px; color: var(--text-muted); margin-top: 1px; font-family: var(--font-mono); }
+.signal-score {
+  font-family: var(--font-mono); font-size: 12px; font-weight: 500;
+  padding: 3px 8px; background: var(--surface); border-radius: 4px;
+  border: 1px solid var(--border);
+}
+
+/* DOMAIN TAGS */
+.domain-tag {
+  font-size: 10px; padding: 2px 7px; border-radius: 4px;
+  font-family: var(--font-mono); background: rgba(59,130,246,0.08);
+  color: #7da5e3; border: 1px solid rgba(59,130,246,0.15);
+  white-space: nowrap;
+}
+
+/* TIMELINE */
+.timeline-header { display: grid; grid-template-columns: repeat(3,1fr); gap: 1px; background: var(--border); }
+.timeline-col { background: var(--card); padding: 10px 14px; text-align: center; font-size: 11px; font-family: var(--font-mono); color: var(--text-muted); }
+.timeline-col.active { color: var(--text); }
+.timeline-col .day-label { font-weight: 500; font-size: 12px; }
+.timeline-col .day-count { font-size: 22px; font-family: var(--font-head); font-weight: 700; margin: 4px 0 2px; }
+.timeline-col.today .day-count { color: var(--red); }
+.timeline-col.morgen .day-count { color: var(--orange); }
+.timeline-col.overmorgen .day-count { color: var(--accent); }
+
+/* CLUSTER */
+.cluster-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; padding: 14px; }
+.cluster-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 12px 14px; cursor: pointer;
+  transition: all 0.15s;
+}
+.cluster-card:hover { border-color: var(--border-light); transform: translateY(-1px); }
+.cluster-name { font-size: 12px; font-weight: 600; margin-bottom: 6px; }
+.cluster-count { font-family: var(--font-mono); font-size: 24px; font-weight: 500; }
+.cluster-sub { font-size: 10px; color: var(--text-muted); margin-top: 3px; font-family: var(--font-mono); }
+.cluster-bar { height: 3px; border-radius: 2px; margin-top: 10px; background: var(--border); overflow: hidden; }
+.cluster-fill { height: 100%; border-radius: 2px; }
+
+/* ACTION BOARD */
+.action-col-header {
+  padding: 12px 16px; font-size: 11px; font-family: var(--font-mono);
+  text-transform: uppercase; letter-spacing: 1px;
+  border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px;
+}
+.action-col-body { padding: 10px; display: flex; flex-direction: column; gap: 8px; }
+.action-card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); padding: 11px 13px; cursor: pointer; transition: all 0.15s;
+}
+.action-card:hover { border-color: var(--border-light); background: var(--card-hover); }
+.action-card-title { font-size: 12px; font-weight: 500; margin-bottom: 5px; line-height: 1.4; }
+.action-card-meta { font-size: 10px; color: var(--text-muted); font-family: var(--font-mono); display: flex; justify-content: space-between; align-items: center; }
+.action-card.overdue { border-left: 2px solid var(--red); }
+.action-card.urgent { border-left: 2px solid var(--orange); }
+.action-card.validate { border-left: 2px solid var(--accent); }
+.action-card.assign { border-left: 2px solid #a855f7; }
+
+/* ANALYSIS */
+.analysis-grid { display: grid; grid-template-columns: 1fr 360px; gap: 16px; }
+.analysis-signal-list { max-height: calc(100vh - 160px); overflow-y: auto; }
+.analysis-signal-item {
+  padding: 12px 16px; border-bottom: 1px solid var(--border);
+  cursor: pointer; transition: background 0.12s;
+}
+.analysis-signal-item:hover, .analysis-signal-item.active { background: var(--accent-glow); }
+.analysis-signal-item.active { border-right: 2px solid var(--accent); }
+.analysis-detail { display: flex; flex-direction: column; gap: 12px; }
+
+.detail-section {
+  background: var(--card); border: 1px solid var(--border);
+  border-radius: var(--radius); overflow: hidden;
+}
+.detail-section-head {
+  padding: 10px 14px; border-bottom: 1px solid var(--border);
+  font-size: 11px; font-family: var(--font-mono); color: var(--text-muted);
+  text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 6px;
+}
+.detail-section-body { padding: 14px; }
+
+.score-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.score-row:last-child { margin-bottom: 0; }
+.score-label { font-size: 12px; width: 100px; color: var(--text-muted); }
+.score-bar-wrap { flex: 1; height: 4px; background: var(--border); border-radius: 2px; overflow: hidden; }
+.score-bar-fill { height: 100%; border-radius: 2px; transition: width 0.5s; }
+.score-val { font-family: var(--font-mono); font-size: 11px; width: 28px; text-align: right; }
+
+.criteria-list { list-style: none; }
+.criteria-item { display: flex; align-items: flex-start; gap: 8px; padding: 5px 0; font-size: 12px; border-bottom: 1px solid var(--border); }
+.criteria-item:last-child { border-bottom: none; }
+.criteria-check { color: var(--green); margin-top: 1px; }
+.criteria-cross { color: var(--red); margin-top: 1px; }
+
+.feedback-textarea {
+  width: 100%; background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text); padding: 10px;
+  font-family: var(--font-body); font-size: 13px; resize: none;
+  outline: none; transition: border-color 0.15s;
+}
+.feedback-textarea:focus { border-color: var(--accent); }
+.action-btn {
+  padding: 7px 14px; border-radius: var(--radius-sm); font-size: 12px;
+  cursor: pointer; border: 1px solid var(--border-light); transition: all 0.15s;
+  font-family: var(--font-body);
+}
+.action-btn:hover { background: var(--card-hover); }
+.action-btn.primary { background: var(--accent); border-color: var(--accent); color: white; }
+.action-btn.primary:hover { background: #2563eb; }
+.action-btn.danger { background: var(--red-bg); border-color: rgba(239,68,68,0.3); color: var(--red); }
+.action-btn.success { background: var(--green-bg); border-color: rgba(16,185,129,0.3); color: var(--green); }
+
+/* RADAR */
+.radar-wrap { position: relative; width: 100%; padding-top: 50%; }
+.radar-wrap canvas { position: absolute; top: 0; left: 0; width: 100% !important; height: 100% !important; }
+
+/* SCROLLBAR */
+::-webkit-scrollbar { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 2px; }
+
+/* AI Reasoning box */
+.ai-box {
+  background: linear-gradient(135deg, rgba(59,130,246,0.05), rgba(139,92,246,0.05));
+  border: 1px solid rgba(59,130,246,0.15); border-radius: var(--radius-sm);
+  padding: 12px; font-size: 12px; line-height: 1.6; color: var(--text-muted);
+  font-family: var(--font-body);
+}
+.ai-label { font-family: var(--font-mono); font-size: 10px; color: var(--accent); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; gap: 5px; }
+
+/* IMPACT MATRIX */
+.impact-matrix { display: grid; grid-template-columns: repeat(2,1fr); gap: 1px; background: var(--border); }
+.impact-quadrant { background: var(--card); padding: 14px; }
+.impact-q-label { font-size: 10px; font-family: var(--font-mono); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+.impact-q-items { display: flex; flex-direction: column; gap: 5px; }
+.impact-item { font-size: 11px; padding: 4px 8px; border-radius: 4px; cursor: pointer; transition: background 0.12s; }
+.impact-item:hover { background: rgba(255,255,255,0.05); }
+
+/* HISTORY */
+.history-item { display: flex; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
+.history-item:last-child { border-bottom: none; }
+.history-time { font-family: var(--font-mono); font-size: 10px; color: var(--text-dim); width: 70px; flex-shrink: 0; padding-top: 2px; }
+.history-content { font-size: 12px; line-height: 1.5; }
+.history-user { font-size: 10px; color: var(--text-muted); margin-top: 2px; font-family: var(--font-mono); }
+
+/* search bar */
+.search-bar {
+  width: 100%; background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius-sm); color: var(--text); padding: 8px 12px;
+  font-size: 13px; font-family: var(--font-body); outline: none;
+  transition: border-color 0.15s; margin-bottom: 12px;
+}
+.search-bar:focus { border-color: var(--accent); }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="logo-badge">
+      <div class="logo-dot"></div> EWS
+    </div>
+    <div class="logo-sub">Early Warning System v2.4</div>
+  </div>
+
+  <nav class="nav">
+    <div class="nav-section">Navigatie</div>
+    <div class="nav-item active" onclick="showPage('management',this)">
+      <span class="nav-icon">📊</span> Management
+      <span class="nav-badge">3</span>
+    </div>
+    <div class="nav-item" onclick="showPage('strategisch',this)">
+      <span class="nav-icon">🗺</span> Strategisch overzicht
+    </div>
+    <div class="nav-item" onclick="showPage('actie',this)">
+      <span class="nav-icon">⚡</span> Actiegerichte opvolging
+      <span class="nav-badge warn">7</span>
+    </div>
+    <div class="nav-item" onclick="showPage('analyse',this)">
+      <span class="nav-icon">🔍</span> Analyse
+    </div>
+
+    <div class="nav-section">Systeem</div>
+    <div class="nav-item" onclick="alert('Instellingen openen...')">
+      <span class="nav-icon">⚙️</span> Instellingen
+    </div>
+    <div class="nav-item" onclick="alert('Rapport genereren...')">
+      <span class="nav-icon">📄</span> Rapporten
+    </div>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="live-indicator">
+      <div class="live-dot"></div>
+      <span>Live • 247 signalen actief</span>
+    </div>
+    <div id="clockDisplay">--:--:--</div>
+  </div>
+</aside>
+
+<!-- MAIN -->
+<main class="main">
+
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="topbar-title" id="pageTitle">Management Dashboard</div>
+    <div class="topbar-right">
+      <span class="topbar-clock" id="dateDisplay"></span>
+      <button class="topbar-btn" onclick="refreshData()">↻ Ververs</button>
+      <button class="topbar-btn primary" onclick="alert('Nieuw signaal toevoegen...')">+ Signaal</button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       PAGE 1: MANAGEMENT
+  ═══════════════════════════════════════════════════════ -->
+  <div class="page active" id="page-management">
+
+    <!-- Metric cards -->
+    <div class="grid-4">
+      <div class="metric-card danger">
+        <div class="mc-stripe"></div>
+        <div class="mc-label">Te laat</div>
+        <div class="mc-value">12</div>
+        <div class="mc-sub">+3 vs gisteren</div>
+      </div>
+      <div class="metric-card warn">
+        <div class="mc-stripe"></div>
+        <div class="mc-label">In actie schieten</div>
+        <div class="mc-value">34</div>
+        <div class="mc-sub">Vandaag actief</div>
+      </div>
+      <div class="metric-card ok">
+        <div class="mc-stripe"></div>
+        <div class="mc-label">Toekomst</div>
+        <div class="mc-value">201</div>
+        <div class="mc-sub">Monitoring actief</div>
+      </div>
+      <div class="metric-card info">
+        <div class="mc-stripe"></div>
+        <div class="mc-label">Open beslissingen</div>
+        <div class="mc-value">8</div>
+        <div class="mc-sub">Wachten op input</div>
+      </div>
+    </div>
+
+    <div class="grid-2-1">
+      <!-- Top 10 signals -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Top 10 Signalen</div>
+          <div class="badge info">Live</div>
+        </div>
+        <div class="panel-body" id="top10List"></div>
+      </div>
+
+      <!-- Timeline verdeling -->
+      <div style="display:flex;flex-direction:column;gap:16px;">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Verdeling over tijd</div>
+          </div>
+          <div class="timeline-header">
+            <div class="timeline-col today">
+              <div class="day-label">Vandaag</div>
+              <div class="day-count">12</div>
+              <div>Te laat</div>
+            </div>
+            <div class="timeline-col morgen">
+              <div class="day-label">Morgen</div>
+              <div class="day-count">23</div>
+              <div>Deadline</div>
+            </div>
+            <div class="timeline-col overmorgen">
+              <div class="day-label">Overmorgen</div>
+              <div class="day-count">41</div>
+              <div>Verwacht</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Signalen per actieklasse</div>
+          </div>
+          <div style="padding:14px;">
+            <div style="position:relative;height:180px;">
+              <canvas id="actieklasseChart" role="img" aria-label="Signalen per actieklasse verdeling"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">Nieuwe urgente signalen</div>
+          </div>
+          <div id="urgentList"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Trends per domein -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Trends per domein</div>
+        <div style="display:flex;gap:8px;">
+          <span class="badge toekomst"><span class="badge-dot"></span>Toekomst</span>
+          <span class="badge actie"><span class="badge-dot"></span>In actie</span>
+          <span class="badge telaat"><span class="badge-dot"></span>Te laat</span>
+        </div>
+      </div>
+      <div style="padding:16px;position:relative;height:260px;">
+        <canvas id="trendsChart" role="img" aria-label="Signalen per domein over tijd"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       PAGE 2: STRATEGISCH OVERZICHT
+  ═══════════════════════════════════════════════════════ -->
+  <div class="page" id="page-strategisch">
+
+    <div class="grid-2">
+      <!-- Clusters -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Thema's & Clusters</div>
+          <span class="badge info">14 clusters</span>
+        </div>
+        <div class="cluster-grid" id="clusterGrid"></div>
+      </div>
+
+      <!-- Impact matrix -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Impact Matrix</div>
+          <span style="font-size:11px;color:var(--text-muted);font-family:var(--font-mono);">Urgentie × Impact</span>
+        </div>
+        <div style="padding:14px;">
+          <div style="display:grid;grid-template-columns:30px 1fr;grid-template-rows:1fr 30px;gap:0;height:280px;">
+            <div style="display:flex;align-items:center;justify-content:center;writing-mode:vertical-rl;font-size:10px;color:var(--text-dim);font-family:var(--font-mono);letter-spacing:1px;text-transform:uppercase;transform:rotate(180deg);">Impact</div>
+            <div>
+              <div class="impact-matrix" style="height:250px;">
+                <div class="impact-quadrant" style="border-bottom:1px solid var(--border);">
+                  <div class="impact-q-label">🔴 Hoge urgentie · Hoge impact</div>
+                  <div class="impact-q-items">
+                    <div class="impact-item" style="color:var(--red);">Energiecrisis uitbreiding</div>
+                    <div class="impact-item" style="color:var(--red);">Politieke instabiliteit NL</div>
+                    <div class="impact-item" style="color:var(--red);">Wateroverlast systemen</div>
+                  </div>
+                </div>
+                <div class="impact-quadrant" style="border-bottom:1px solid var(--border);">
+                  <div class="impact-q-label">🟡 Lage urgentie · Hoge impact</div>
+                  <div class="impact-q-items">
+                    <div class="impact-item" style="color:var(--orange);">AI-regulering EU</div>
+                    <div class="impact-item" style="color:var(--orange);">Demografische verschuiving</div>
+                    <div class="impact-item" style="color:var(--orange);">Klimaatbeleid 2035</div>
+                  </div>
+                </div>
+                <div class="impact-quadrant">
+                  <div class="impact-q-label">🟠 Hoge urgentie · Lage impact</div>
+                  <div class="impact-q-items">
+                    <div class="impact-item" style="color:var(--orange);">Supply chain verstoringen</div>
+                    <div class="impact-item" style="color:var(--orange);">Lokale verstoringen</div>
+                  </div>
+                </div>
+                <div class="impact-quadrant">
+                  <div class="impact-q-label">🟢 Lage urgentie · Lage impact</div>
+                  <div class="impact-q-items">
+                    <div class="impact-item" style="color:var(--green);">Innovatiekansen</div>
+                    <div class="impact-item" style="color:var(--green);">Sectorontwikkelingen</div>
+                    <div class="impact-item" style="color:var(--green);">Langetermijn trends</div>
+                  </div>
+                </div>
+              </div>
+              <div style="text-align:center;font-size:10px;color:var(--text-dim);font-family:var(--font-mono);letter-spacing:1px;text-transform:uppercase;padding-top:6px;">Urgentie →</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Beweging doorheen de tijd -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Beweging doorheen de tijd</div>
+        <div style="display:flex;gap:8px;">
+          <span class="badge toekomst"><span class="badge-dot"></span>Toekomst</span>
+          <span class="badge actie"><span class="badge-dot"></span>In actie</span>
+          <span class="badge telaat"><span class="badge-dot"></span>Te laat</span>
+        </div>
+      </div>
+      <div style="padding:16px;position:relative;height:220px;">
+        <canvas id="bewegingChart" role="img" aria-label="Beweging van signalen doorheen de tijd"></canvas>
+      </div>
+    </div>
+
+    <!-- Timing overview -->
+    <div class="panel">
+      <div class="panel-header">
+        <div class="panel-title">Timing — Signalen per week</div>
+      </div>
+      <div style="padding:16px;position:relative;height:160px;">
+        <canvas id="timingChart" role="img" aria-label="Signalen per week timing overzicht"></canvas>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       PAGE 3: ACTIEGERICHTE OPVOLGING
+  ═══════════════════════════════════════════════════════ -->
+  <div class="page" id="page-actie">
+
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:16px;" id="actieBoard">
+
+      <!-- Col 1: Wat vereist aandacht? -->
+      <div class="panel" style="min-height:500px;">
+        <div class="action-col-header">
+          <span style="color:var(--red);">●</span>
+          Vereist aandacht
+          <span class="nav-badge" style="margin-left:auto;">5</span>
+        </div>
+        <div class="action-col-body" id="colAandacht"></div>
+      </div>
+
+      <!-- Col 2: Wat moet gevalideerd worden? -->
+      <div class="panel" style="min-height:500px;">
+        <div class="action-col-header">
+          <span style="color:var(--accent);">●</span>
+          Te valideren
+          <span class="nav-badge info" style="margin-left:auto;">4</span>
+        </div>
+        <div class="action-col-body" id="colValideren"></div>
+      </div>
+
+      <!-- Col 3: Wat moet toegewezen worden? -->
+      <div class="panel" style="min-height:500px;">
+        <div class="action-col-header">
+          <span style="color:#a855f7;">●</span>
+          Te assigneren
+          <span class="nav-badge" style="background:#a855f7;margin-left:auto;">3</span>
+        </div>
+        <div class="action-col-body" id="colAssigneren"></div>
+      </div>
+
+      <!-- Col 4: Overdue -->
+      <div class="panel" style="min-height:500px;">
+        <div class="action-col-header">
+          <span style="color:var(--red);animation:pulse 1s infinite;display:inline-block;">●</span>
+          Overdue
+          <span class="nav-badge" style="margin-left:auto;">3</span>
+        </div>
+        <div class="action-col-body" id="colOverdue"></div>
+      </div>
+
+    </div>
+
+    <!-- Overdue beslissingen -->
+    <div class="panel" style="margin-top:16px;">
+      <div class="panel-header">
+        <div class="panel-title">Openstaande beslissingen</div>
+        <button class="action-btn primary" onclick="alert('Nieuwe beslissing aanmaken...')">+ Beslissing</button>
+      </div>
+      <div id="beslissingList"></div>
+    </div>
+
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════
+       PAGE 4: ANALYSE
+  ═══════════════════════════════════════════════════════ -->
+  <div class="page" id="page-analyse">
+
+    <div class="analysis-grid">
+
+      <!-- Signal list left -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">Signalen — Bronnen & Analyse</div>
+          <span class="badge info">247 totaal</span>
+        </div>
+        <div style="padding:10px 14px 0;">
+          <input class="search-bar" type="text" placeholder="🔍  Zoek signaal, bron, domein..." oninput="filterSignals(this.value)">
+        </div>
+        <div class="analysis-signal-list" id="analyseSignalList"></div>
+      </div>
+
+      <!-- Detail panel right -->
+      <div class="analysis-detail" id="analyseDetail">
+        <div class="detail-section">
+          <div class="detail-section-head">📌 Signaal detail</div>
+          <div class="detail-section-body">
+            <div style="text-align:center;color:var(--text-dim);padding:20px;font-size:13px;">
+              Selecteer een signaal uit de lijst
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+</main>
+
+<script>
+// ══════════════════════════════════════════
+// DATA
+// ══════════════════════════════════════════
+const domains = ['Politiek', 'Economie', 'Energie', 'Klimaat', 'Technologie', 'Sociaal', 'Veiligheid', 'Gezondheid'];
+const statusTypes = ['toekomst','toekomst','toekomst','actie','actie','telaat'];
+
+const signals = [
+  { id:1, title:'Energieprijzen stijgen kritisch niveau', domain:'Energie', status:'telaat', score:94, source:'Reuters', urgentie:9, impact:9, assigned:'K. De Smet', deadline:'Vandaag', bron:'Reuters, EC-rapport' },
+  { id:2, title:'Nieuwe migratiewetgeving EU goedgekeurd', domain:'Politiek', status:'actie', score:82, source:'Belga', urgentie:7, impact:8, assigned:'M. Janssen', deadline:'Morgen', bron:'Belga, Europees Parlement' },
+  { id:3, title:'Cyberaanval op kritieke infrastructuur', domain:'Veiligheid', status:'telaat', score:97, source:'CERT.be', urgentie:10, impact:9, assigned:'—', deadline:'Vandaag', bron:'CERT.be, NIST' },
+  { id:4, title:'Droogte-alert regio Kempen & Polders', domain:'Klimaat', status:'actie', score:76, source:'VMM', urgentie:7, impact:7, assigned:'L. Peeters', deadline:'Morgen', bron:'VMM, KMI' },
+  { id:5, title:'AI-regulering GDPR aanpassing verwacht', domain:'Technologie', status:'actie', score:71, source:'Politico', urgentie:6, impact:8, assigned:'—', deadline:'3 dagen', bron:'Politico, EC' },
+  { id:6, title:'Ziekenhuiscapaciteit winterpiek risico', domain:'Gezondheid', status:'actie', score:68, source:'Sciensano', urgentie:6, impact:7, assigned:'V. Claes', deadline:'2 weken', bron:'Sciensano, WHO' },
+  { id:7, title:'Inflatie consumentenprijzen +4.2%', domain:'Economie', status:'actie', score:65, source:'NBB', urgentie:5, impact:7, assigned:'—', deadline:'Volgende week', bron:'NBB, Statbel' },
+  { id:8, title:'Stakingen openbaar vervoer gepland', domain:'Sociaal', status:'toekomst', score:55, source:'De Standaard', urgentie:5, impact:5, assigned:'R. Bogaert', deadline:'2 weken', bron:'De Standaard, ACOD' },
+  { id:9, title:'Nucleaire centrale onderhoud vertraging', domain:'Energie', status:'actie', score:78, source:'Engie', urgentie:7, impact:8, assigned:'—', deadline:'Morgen', bron:'Engie Electrabel' },
+  { id:10, title:'Grenscontroles Schengenzone tijdelijk', domain:'Politiek', status:'toekomst', score:48, source:'EUobserver', urgentie:4, impact:6, assigned:'M. Janssen', deadline:'1 maand', bron:'EUobserver, Binnenlandse Zaken' },
+  { id:11, title:'Overstromingsrisico Maasgebied hoog', domain:'Klimaat', status:'telaat', score:88, source:'Waterinfo', urgentie:9, impact:8, assigned:'L. Peeters', deadline:'Vandaag', bron:'Waterinfo.be, VMM' },
+  { id:12, title:'Tekort microchips automotive sector', domain:'Economie', status:'toekomst', score:44, source:'FT', urgentie:4, impact:6, assigned:'—', deadline:'3 maanden', bron:'Financial Times, IEA' },
+];
+
+// ══════════════════════════════════════════
+// CLOCK
+// ══════════════════════════════════════════
+function updateClock() {
+  const now = new Date();
+  const t = now.toLocaleTimeString('nl-BE');
+  const d = now.toLocaleDateString('nl-BE', {weekday:'long', year:'numeric', month:'long', day:'numeric'});
+  document.getElementById('clockDisplay').textContent = t;
+  document.getElementById('dateDisplay').textContent = d;
+}
+updateClock();
+setInterval(updateClock, 1000);
+
+// ══════════════════════════════════════════
+// NAVIGATION
+// ══════════════════════════════════════════
+const titles = { management:'Management Dashboard', strategisch:'Strategisch Overzicht', actie:'Actiegerichte Opvolging', analyse:'Analyse & Bronnen' };
+function showPage(id, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + id).classList.add('active');
+  el.classList.add('active');
+  document.getElementById('pageTitle').textContent = titles[id];
+  if (id === 'analyse') renderAnalyseList(signals);
+}
+
+// ══════════════════════════════════════════
+// TOP 10 LIST
+// ══════════════════════════════════════════
+function renderTop10() {
+  const sorted = [...signals].sort((a,b) => b.score - a.score).slice(0,10);
+  const el = document.getElementById('top10List');
+  el.innerHTML = sorted.map((s,i) => `
+    <div class="signal-row" onclick="openAnalysis(${s.id})">
+      <div class="signal-rank">${i+1}</div>
+      <div class="signal-status-dot ${s.status}"></div>
+      <div class="signal-content">
+        <div class="signal-title">${s.title}</div>
+        <div class="signal-meta">${s.source} · ${s.deadline} · <span class="domain-tag">${s.domain}</span></div>
+      </div>
+      <span class="badge ${s.status}">${s.status === 'toekomst' ? 'Toekomst' : s.status === 'actie' ? 'In actie' : 'Te laat'}</span>
+      <div class="signal-score" style="color:${s.score>80?'var(--red)':s.score>60?'var(--orange)':'var(--accent)'}">${s.score}</div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════
+// URGENT LIST
+// ══════════════════════════════════════════
+function renderUrgentList() {
+  const urgent = signals.filter(s => s.status === 'telaat').slice(0,3);
+  const el = document.getElementById('urgentList');
+  el.innerHTML = urgent.map(s => `
+    <div class="signal-row" style="padding:9px 16px;" onclick="openAnalysis(${s.id})">
+      <div class="signal-status-dot telaat"></div>
+      <div class="signal-content">
+        <div class="signal-title" style="font-size:12px;">${s.title}</div>
+        <div class="signal-meta">${s.source} · ${s.deadline}</div>
+      </div>
+      <div class="signal-score" style="color:var(--red);font-size:11px;">${s.score}</div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════
+// CHARTS — MANAGEMENT
+// ══════════════════════════════════════════
+function renderActieklasseChart() {
+  const counts = { Te_laat: signals.filter(s=>s.status==='telaat').length, In_actie: signals.filter(s=>s.status==='actie').length, Toekomst: signals.filter(s=>s.status==='toekomst').length };
+  new Chart(document.getElementById('actieklasseChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Te laat', 'In actie', 'Toekomst'],
+      datasets: [{ data: [counts.Te_laat, counts.In_actie, counts.Toekomst], backgroundColor: ['#ef4444','#f59e0b','#10b981'], borderWidth: 0, hoverOffset: 6 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false, cutout: '68%',
+      plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => ` ${ctx.label}: ${ctx.raw}` } } }
+    }
+  });
+}
+
+function renderTrendsChart() {
+  const labels = domains;
+  new Chart(document.getElementById('trendsChart'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Toekomst', data: [12,8,5,14,11,9,6,7], backgroundColor: 'rgba(16,185,129,0.5)', borderColor: '#10b981', borderWidth: 1 },
+        { label: 'In actie', data: [5,6,8,4,7,3,5,4], backgroundColor: 'rgba(245,158,11,0.5)', borderColor: '#f59e0b', borderWidth: 1 },
+        { label: 'Te laat', data: [2,3,4,1,2,1,3,2], backgroundColor: 'rgba(239,68,68,0.5)', borderColor: '#ef4444', borderWidth: 1 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { stacked: true, ticks: { color: '#7a8599', font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' } },
+        y: { stacked: true, ticks: { color: '#7a8599', font: { size: 11 } }, grid: { color: 'rgba(255,255,255,0.04)' } }
+      }
+    }
+  });
+}
+
+// ══════════════════════════════════════════
+// CLUSTERS
+// ══════════════════════════════════════════
+const clusters = [
+  { name: 'Energie & Klimaat', count: 28, trend: '+5', color: '#ef4444', fill: 75 },
+  { name: 'Geopolitiek', count: 22, trend: '+2', color: '#f59e0b', fill: 60 },
+  { name: 'Digitalisering', count: 19, trend: '+8', color: '#3b82f6', fill: 52 },
+  { name: 'Volksgezondheid', count: 17, trend: '-1', color: '#10b981', fill: 46 },
+  { name: 'Economie', count: 15, trend: '+1', color: '#f59e0b', fill: 40 },
+  { name: 'Mobiliteit', count: 11, trend: '0', color: '#7a8599', fill: 30 },
+  { name: 'Veiligheid', count: 21, trend: '+4', color: '#ef4444', fill: 57 },
+  { name: 'Demografie', count: 9, trend: '+1', color: '#a855f7', fill: 24 },
+  { name: 'Innovatie', count: 14, trend: '+3', color: '#3b82f6', fill: 38 },
+];
+function renderClusters() {
+  document.getElementById('clusterGrid').innerHTML = clusters.map(c => `
+    <div class="cluster-card">
+      <div class="cluster-name" style="color:${c.color};">${c.name}</div>
+      <div class="cluster-count">${c.count}</div>
+      <div class="cluster-sub">signalen · ${c.trend} deze week</div>
+      <div class="cluster-bar"><div class="cluster-fill" style="width:${c.fill}%;background:${c.color};"></div></div>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════
+// CHARTS — STRATEGISCH
+// ══════════════════════════════════════════
+function renderBeweging() {
+  const weeks = ['W-8','W-7','W-6','W-5','W-4','W-3','W-2','W-1','Nu'];
+  new Chart(document.getElementById('bewegingChart'), {
+    type: 'line',
+    data: {
+      labels: weeks,
+      datasets: [
+        { label: 'Toekomst', data: [210,205,215,208,203,199,204,201,201], borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.08)', tension: 0.4, fill: true, borderWidth: 2 },
+        { label: 'In actie', data: [25,28,31,27,30,32,35,34,34], borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.08)', tension: 0.4, fill: true, borderWidth: 2 },
+        { label: 'Te laat', data: [5,7,8,9,10,10,11,12,12], borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.08)', tension: 0.4, fill: true, borderWidth: 2 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#7a8599', font:{size:11} }, grid: { color: 'rgba(255,255,255,0.04)' } },
+        y: { ticks: { color: '#7a8599', font:{size:11} }, grid: { color: 'rgba(255,255,255,0.04)' } }
+      }
+    }
+  });
+}
+
+function renderTiming() {
+  const weeks = ['1 jan','8 jan','15 jan','22 jan','29 jan','5 feb','12 feb','19 feb','26 feb'];
+  new Chart(document.getElementById('timingChart'), {
+    type: 'bar',
+    data: {
+      labels: weeks,
+      datasets: [{ label: 'Signalen', data: [18,22,31,19,26,28,34,29,37], backgroundColor: 'rgba(59,130,246,0.5)', borderColor: '#3b82f6', borderWidth: 1 }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#7a8599', font:{size:10} }, grid: { display: false } },
+        y: { ticks: { color: '#7a8599', font:{size:10} }, grid: { color: 'rgba(255,255,255,0.04)' } }
+      }
+    }
+  });
+}
+
+// ══════════════════════════════════════════
+// ACTION BOARD
+// ══════════════════════════════════════════
+const actionData = {
+  aandacht: [
+    { id:3, title:'Cyberaanval op kritieke infrastructuur', domain:'Veiligheid', deadline:'Vandaag', note:'CERT.be bevestigt aanval op water-infra' },
+    { id:1, title:'Energieprijzen kritisch niveau bereikt', domain:'Energie', deadline:'Vandaag', note:'Interventie ministerraad nodig' },
+    { id:11, title:'Overstromingsrisico Maasgebied', domain:'Klimaat', deadline:'Vandaag', note:'Evacuatieplan activeren?' },
+    { id:9, title:'Nucleaire centrale onderhoud', domain:'Energie', deadline:'Morgen', note:'Capaciteitstekort dreigt' },
+    { id:2, title:'EU Migratiewetgeving goedgekeurd', domain:'Politiek', deadline:'Morgen', note:'Implementatieplan vereist' },
+  ],
+  valideren: [
+    { id:5, title:'AI-regulering GDPR aanpassing', domain:'Technologie', deadline:'3 dagen', note:'Juridische review nodig' },
+    { id:4, title:'Droogte-alert Kempen', domain:'Klimaat', deadline:'Morgen', note:'VMM-data valideren' },
+    { id:7, title:'Inflatie consumentenprijzen', domain:'Economie', deadline:'Volgende week', note:'NBB-rapport checken' },
+    { id:6, title:'Ziekenhuiscapaciteit winterpiek', domain:'Gezondheid', deadline:'2 weken', note:'Sciensano prognose valideren' },
+  ],
+  assigneren: [
+    { id:3, title:'Cyberaanval — respons coördineren', domain:'Veiligheid', deadline:'Vandaag', note:'Coordinator nog niet aangewezen' },
+    { id:5, title:'AI-regulering — werkgroep opstarten', domain:'Technologie', deadline:'3 dagen', note:'Juridisch team + beleidsadviseur' },
+    { id:7, title:'Inflatie-impact analyse', domain:'Economie', deadline:'Volgende week', note:'Economisch team' },
+  ],
+  overdue: [
+    { id:11, title:'Overstromingsplan update 2025', domain:'Klimaat', deadline:'7 dagen geleden', note:'Oorspronkelijk deadline gemist' },
+    { id:9, title:'Energiereserve audit Q4', domain:'Energie', deadline:'5 dagen geleden', note:'Rapport niet ontvangen' },
+    { id:2, title:'Stakeholders migratie informeren', domain:'Politiek', deadline:'3 dagen geleden', note:'Communicatieplan ontbreekt' },
+  ],
+};
+
+function renderActionBoard() {
+  function makeCard(item, cls) {
+    return `<div class="action-card ${cls}" onclick="openAnalysis(${item.id})">
+      <div class="action-card-title">${item.title}</div>
+      <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;">${item.note}</div>
+      <div class="action-card-meta">
+        <span class="domain-tag">${item.domain}</span>
+        <span style="color:${cls==='overdue'?'var(--red)':cls==='urgent'?'var(--orange)':'var(--text-muted)'};">⏱ ${item.deadline}</span>
+      </div>
+    </div>`;
+  }
+  document.getElementById('colAandacht').innerHTML = actionData.aandacht.map(i => makeCard(i,'urgent')).join('');
+  document.getElementById('colValideren').innerHTML = actionData.valideren.map(i => makeCard(i,'validate')).join('');
+  document.getElementById('colAssigneren').innerHTML = actionData.assigneren.map(i => makeCard(i,'assign')).join('');
+  document.getElementById('colOverdue').innerHTML = actionData.overdue.map(i => makeCard(i,'overdue')).join('');
+}
+
+function renderBeslissingen() {
+  const items = [
+    { q: 'Activeer noodplan cyberincident Fase 2?', owner: 'Veiligheidsraad', deadline: 'Vandaag 17:00', status: 'telaat' },
+    { q: 'Extra energiereserve inkopen Q1?', owner: 'Energie dept.', deadline: 'Morgen 12:00', status: 'actie' },
+    { q: 'Communicatie overstromingsrisico activeren?', owner: 'Crisis comms', deadline: 'Morgen 09:00', status: 'actie' },
+    { q: 'EU AI-wet werkgroep oprichten?', owner: 'Digitalisering', deadline: 'Volgende week', status: 'toekomst' },
+    { q: 'Capaciteitsuitbreiding ziekenhuizen plannen?', owner: 'Volksgezondheid', deadline: '2 weken', status: 'toekomst' },
+  ];
+  document.getElementById('beslissingList').innerHTML = items.map(i => `
+    <div class="signal-row">
+      <div class="signal-status-dot ${i.status}"></div>
+      <div class="signal-content">
+        <div class="signal-title">${i.q}</div>
+        <div class="signal-meta">Eigenaar: ${i.owner} · Deadline: ${i.deadline}</div>
+      </div>
+      <button class="action-btn success" onclick="alert('Beslissing: Goedgekeurd')">✓ Ja</button>
+      <button class="action-btn danger" onclick="alert('Beslissing: Afgewezen')">✗ Nee</button>
+      <button class="action-btn" onclick="alert('Uitgesteld...')">→ Stel uit</button>
+    </div>`).join('');
+}
+
+// ══════════════════════════════════════════
+// ANALYSE LIST
+// ══════════════════════════════════════════
+function renderAnalyseList(list) {
+  document.getElementById('analyseSignalList').innerHTML = list.map(s => `
+    <div class="analysis-signal-item" id="asig-${s.id}" onclick="renderSignalDetail(${s.id})">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;">
+        <div class="signal-status-dot ${s.status}"></div>
+        <div style="font-size:13px;font-weight:500;flex:1;">${s.title}</div>
+        <div class="signal-score" style="font-size:11px;color:${s.score>80?'var(--red)':s.score>60?'var(--orange)':'var(--accent)'}">${s.score}</div>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;">
+        <span class="domain-tag">${s.domain}</span>
+        <span style="font-size:10px;color:var(--text-dim);font-family:var(--font-mono);">${s.bron}</span>
+      </div>
+    </div>`).join('');
+}
+
+function filterSignals(q) {
+  const filtered = signals.filter(s =>
+    s.title.toLowerCase().includes(q.toLowerCase()) ||
+    s.domain.toLowerCase().includes(q.toLowerCase()) ||
+    s.bron.toLowerCase().includes(q.toLowerCase())
+  );
+  renderAnalyseList(filtered);
+}
+
+const aiReasoning = {
+  1: 'Op basis van prijsdata, geopolitieke spanningen en seizoenspatronen is de kans op verdere escalatie hoog. Historische vergelijking met de energiecrisis van 2022 toont vergelijkbare indicatoren. Aanbevolen actie: directe ministerraadbespreking activeren.',
+  3: 'Aanvalspatronen komen overeen met APT-groepen eerder gelinkt aan staatsgefinancierde actoren. Kritieke infrastructuurcomponenten SCADA-systemen zijn kwetsbaar. Onmiddellijke isolatie van getroffen systemen sterk aanbevolen.',
+  4: 'VMM-neerslagdata toont 68% afwijking van normaalwaarden. Bodemvochtgehalte kritisch laag. Impact op landbouwsector en drinkwaterreserves verwacht binnen 2-3 weken bij huidige trend.',
+};
+
+function renderSignalDetail(id) {
+  const s = signals.find(x => x.id === id);
+  if (!s) return;
+  document.querySelectorAll('.analysis-signal-item').forEach(el => el.classList.remove('active'));
+  const sel = document.getElementById('asig-' + id);
+  if (sel) sel.classList.add('active');
+
+  const reasoning = aiReasoning[id] || 'Op basis van meerdere databronnen en historische vergelijkingen is dit signaal geclassificeerd als ' + (s.status === 'telaat' ? 'kritiek' : s.status === 'actie' ? 'urgent' : 'monitor') + '. Verdere analyse van de trendlijn toont een stijgende impact over de komende 2 weken.';
+  const criteria = [
+    { ok: s.score > 60, text: 'Drempelwaarde overschreden (score >' + 60 + ')' },
+    { ok: s.urgentie >= 7, text: 'Hoge urgentie vastgesteld (score: ' + s.urgentie + '/10)' },
+    { ok: s.impact >= 7, text: 'Significante impact verwacht (score: ' + s.impact + '/10)' },
+    { ok: s.assigned !== '—', text: 'Verantwoordelijke aangewezen: ' + (s.assigned !== '—' ? s.assigned : 'ontbreekt') },
+    { ok: s.status !== 'toekomst', text: 'Tijdkritisch karakter vastgesteld' },
+  ];
+
+  document.getElementById('analyseDetail').innerHTML = `
+    <div class="detail-section">
+      <div class="detail-section-head">📌 Signaal</div>
+      <div class="detail-section-body">
+        <div style="font-size:14px;font-weight:600;margin-bottom:8px;">${s.title}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px;">
+          <span class="badge ${s.status}">${s.status === 'toekomst' ? 'Toekomst' : s.status === 'actie' ? 'In actie schieten' : 'Te laat'}</span>
+          <span class="domain-tag">${s.domain}</span>
+          <span class="badge info">Score: ${s.score}</span>
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);display:grid;grid-template-columns:1fr 1fr;gap:6px;">
+          <div>📡 Bron: <span style="color:var(--text);">${s.bron}</span></div>
+          <div>👤 Assigned: <span style="color:var(--text);">${s.assigned}</span></div>
+          <div>⏱ Deadline: <span style="color:${s.deadline==='Vandaag'?'var(--red)':'var(--text)'};">${s.deadline}</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-section-head">🤖 AI-redenering</div>
+      <div class="detail-section-body">
+        <div class="ai-box">
+          <div class="ai-label">✦ Claude analyse</div>
+          ${reasoning}
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-section-head">📊 Scores</div>
+      <div class="detail-section-body">
+        ${[['Urgentie', s.urgentie*10, s.urgentie>=8?'var(--red)':s.urgentie>=6?'var(--orange)':'var(--accent)'],
+           ['Impact', s.impact*10, s.impact>=8?'var(--red)':s.impact>=6?'var(--orange)':'var(--accent)'],
+           ['Relevantie', s.score, s.score>=80?'var(--red)':s.score>=60?'var(--orange)':'var(--accent)'],
+           ['Betrouwbaarheid', 85, '#10b981'],
+           ['Tijdgevoeligheid', s.status==='telaat'?95:s.status==='actie'?65:35, s.status==='telaat'?'var(--red)':s.status==='actie'?'var(--orange)':'var(--green)']
+        ].map(([l,v,c]) => `
+          <div class="score-row">
+            <div class="score-label">${l}</div>
+            <div class="score-bar-wrap"><div class="score-bar-fill" style="width:${v}%;background:${c};"></div></div>
+            <div class="score-val" style="color:${c};">${v}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-section-head">✅ Criteria</div>
+      <div class="detail-section-body">
+        <ul class="criteria-list">
+          ${criteria.map(c => `<li class="criteria-item">
+            <span class="${c.ok?'criteria-check':'criteria-cross'}">${c.ok?'✓':'✗'}</span>
+            <span>${c.text}</span>
+          </li>`).join('')}
+        </ul>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-section-head">⚡ Aanbevolen actie</div>
+      <div class="detail-section-body">
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px;">
+          ${s.status==='telaat'?'Onmiddellijk handelen vereist. Escaleer naar bevoegd niveau.':
+            s.status==='actie'?'Activeer opvolgingsprocedure. Assign verantwoordelijke.':
+            'Monitoring aanhouden. Herbekijk over 7 dagen.'}
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="action-btn danger" onclick="alert('Escalatie gestart...')">🚨 Escaleer</button>
+          <button class="action-btn primary" onclick="alert('Signaal toegewezen...')">👤 Assign</button>
+          <button class="action-btn" onclick="alert('Snooze 24u...')">💤 Snooze 24u</button>
+          <button class="action-btn success" onclick="alert('Afgehandeld!')">✓ Afhandelen</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-section-head">📈 Historiek</div>
+      <div class="detail-section-body">
+        <div class="history-item">
+          <div class="history-time">Vandaag 09:14</div>
+          <div><div class="history-content">Signaal escalatiestatus bijgewerkt naar "${s.status==='telaat'?'Te laat':s.status==='actie'?'In actie':'Toekomst'}"</div><div class="history-user">Systeem (automatisch)</div></div>
+        </div>
+        <div class="history-item">
+          <div class="history-time">Gisteren 16:42</div>
+          <div><div class="history-content">Eerste classificatie en scoring uitgevoerd. Score initieel: ${s.score - 5}</div><div class="history-user">${s.assigned !== '—' ? s.assigned : 'Analist'}</div></div>
+        </div>
+        <div class="history-item">
+          <div class="history-time">Gisteren 08:00</div>
+          <div><div class="history-content">Signaal toegevoegd vanuit bron: ${s.source}</div><div class="history-user">Automatische import</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-section-head">💬 Feedback & Beslissing</div>
+      <div class="detail-section-body">
+        <textarea class="feedback-textarea" rows="3" placeholder="Voeg beslissing of feedback toe..."></textarea>
+        <div style="display:flex;gap:8px;margin-top:8px;">
+          <button class="action-btn primary" onclick="alert('Feedback opgeslagen!')">Opslaan</button>
+          <button class="action-btn" onclick="alert('Beslissing geregistreerd!')">📋 Beslissing</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-section">
+      <div class="detail-section-head">📡 Radar</div>
+      <div class="detail-section-body">
+        <div class="radar-wrap">
+          <canvas id="radarChart-${id}" role="img" aria-label="Radar analyse voor ${s.title}"></canvas>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:10px;justify-content:center;font-size:10px;color:var(--text-muted);">
+          <span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;background:rgba(239,68,68,0.5);border:1px solid #ef4444;border-radius:1px;"></span>Dit signaal</span>
+          <span style="display:flex;align-items:center;gap:4px;"><span style="width:8px;height:8px;background:rgba(59,130,246,0.2);border:1px solid #3b82f6;border-radius:1px;"></span>Gemiddelde</span>
+        </div>
+      </div>
+    </div>`;
+
+  // Render radar chart
+  setTimeout(() => {
+    const ctx = document.getElementById('radarChart-' + id);
+    if (ctx) {
+      new Chart(ctx, {
+        type: 'radar',
+        data: {
+          labels: ['Urgentie','Impact','Betrouwbaarheid','Relevantie','Tijdgev.','Zichtbaarheid'],
+          datasets: [
+            { label: 'Dit signaal', data: [s.urgentie, s.impact, 8.5, s.score/10, s.status==='telaat'?9.5:s.status==='actie'?6.5:3.5, 7], backgroundColor: 'rgba(239,68,68,0.2)', borderColor: '#ef4444', borderWidth: 2, pointBackgroundColor: '#ef4444', pointRadius: 3 },
+            { label: 'Gemiddelde', data: [5,5,7,5.5,5,6], backgroundColor: 'rgba(59,130,246,0.1)', borderColor: '#3b82f6', borderWidth: 1.5, borderDash: [4,3], pointBackgroundColor: '#3b82f6', pointRadius: 2 }
+          ]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: { r: { min: 0, max: 10, ticks: { display: false, stepSize: 2 }, grid: { color: 'rgba(255,255,255,0.07)' }, pointLabels: { color: '#7a8599', font: { size: 10 } }, angleLines: { color: 'rgba(255,255,255,0.05)' } } }
+        }
+      });
+    }
+  }, 100);
+}
+
+function openAnalysis(id) {
+  showPage('analyse', document.querySelector('.nav-item:nth-child(5)'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('.nav-item')[3].classList.add('active');
+  document.getElementById('pageTitle').textContent = titles.analyse;
+  renderAnalyseList(signals);
+  setTimeout(() => renderSignalDetail(id), 50);
+}
+
+function refreshData() {
+  const dot = document.querySelector('.live-dot');
+  dot.style.background = '#f59e0b';
+  setTimeout(() => { dot.style.background = 'var(--green)'; }, 800);
+}
+
+// ══════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════
+window.addEventListener('load', () => {
+  renderTop10();
+  renderUrgentList();
+  renderActieklasseChart();
+  renderTrendsChart();
+  renderClusters();
+  setTimeout(() => {
+    renderBeweging();
+    renderTiming();
+  }, 100);
+  renderActionBoard();
+  renderBeslissingen();
+});
+</script>
+</body>
+</html>
