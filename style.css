@@ -365,6 +365,8 @@ header.scrolled .btn-ghost:hover {
   overflow: hidden;
   box-shadow: 0 26px 60px -24px rgba(28, 24, 18, .5);
   aspect-ratio: 1;
+  display: flex;
+  justify-content:center;
 }
 
 .cover-wrap img {
