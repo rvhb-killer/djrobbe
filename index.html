@@ -313,6 +313,5 @@ const hdr=document.getElementById('hdr');const onS=()=>hdr.classList.toggle('scr
 const io=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}}),{threshold:.15});
 document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
 </script>
-		<script src="js.js"></script>  
 </body>
 </html>
